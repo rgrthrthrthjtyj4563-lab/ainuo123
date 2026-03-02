@@ -22,6 +22,13 @@ engine = create_engine(
     echo=settings.DEBUG
 )
 
+@event.listens_for(engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    if settings.DATABASE_URL.startswith("sqlite"):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
 # 会话工厂
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -237,6 +244,9 @@ class StructureNode(Base):
     
     # 图表配置 (v2.1新增)
     charts = Column(JSON, default=[], comment="图表配置列表")
+    
+    # 内容块配置 (v3.0新增 - PRD5)
+    content_blocks = Column(JSON, default=[], comment="内容块配置列表")
     
     # AI配置
     prompt_config_id = Column(_bigint(), ForeignKey("prompt_configs.id", ondelete="SET NULL"), nullable=True, comment="关联提示词配置")

@@ -1,6 +1,6 @@
 import hashlib
 import re
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any, Optional
 from docx import Document
 from io import BytesIO
 
@@ -27,8 +27,7 @@ class WordStructureExtractor:
             if not para.text.strip():
                 continue
             
-            style_name = para.style.name
-            level = self._get_heading_level(style_name)
+            level = self._get_heading_level(para)
             
             if level is not None:
                 node = self._create_node(para.text.strip(), level)
@@ -57,8 +56,11 @@ class WordStructureExtractor:
             "structure": nodes
         }
 
-    def _get_heading_level(self, style_name: str) -> Optional[int]:
-        """Map style name to level (1, 2, 3). Returns None if not a heading."""
+    def _get_heading_level(self, para) -> Optional[int]:
+        style_name = ""
+        if getattr(para, "style", None) is not None:
+            style_name = getattr(para.style, "name", "") or ""
+
         match = re.search(r'Heading\s*(\d)', style_name, re.IGNORECASE)
         if match:
             level = int(match.group(1))
@@ -70,6 +72,53 @@ class WordStructureExtractor:
             level = int(match_cn.group(1))
             if 1 <= level <= 3:
                 return level
+
+        try:
+            p_pr = para._p.pPr
+            if p_pr is not None and p_pr.outlineLvl is not None and p_pr.outlineLvl.val is not None:
+                level = int(p_pr.outlineLvl.val) + 1
+                if 1 <= level <= 3:
+                    return level
+        except Exception:
+            pass
+
+        text = (getattr(para, "text", "") or "").strip()
+        if not text:
+            return None
+        if len(text) > 120:
+            return None
+        if re.search(r"[。！？.!?]$", text):
+            return None
+
+        numeric = re.match(r"^(?P<num>\d+(?:\.\d+){0,5})(?:[.、\s]|$)", text)
+        if numeric:
+            parts = numeric.group("num").split(".")
+            inferred_level = min(len(parts), 3)
+            if inferred_level == 1:
+                if len(text) > 40:
+                    return None
+                if "：" in text or ":" in text or "；" in text or ";" in text:
+                    return None
+            return inferred_level
+
+        if re.match(r"^\d+\s+", text):
+            if len(text) > 40:
+                return None
+            if "：" in text or ":" in text or "；" in text or ";" in text:
+                return None
+            return 1
+
+        if re.match(r"^[一二三四五六七八九十]+、", text):
+            if len(text) > 40:
+                return None
+            if "：" in text or ":" in text or "；" in text or ";" in text:
+                return None
+            return 1
+        if re.match(r"^（[一二三四五六七八九十]+）", text):
+            return 2
+        if re.match(r"^[（(]\d+[)）]", text):
+            return 2
+
         return None
 
     def _create_node(self, title: str, level: int) -> Dict[str, Any]:

@@ -1,11 +1,10 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import select, delete, update, func
+from sqlalchemy import select, func
 from app.models.database import ReportStructure, StructureNode
 from app.schemas.report_structure import (
     ReportStructureCreate, ReportStructureUpdate,
-    StructureNodeCreate, StructureNodeUpdate,
-    StructureNodeReorderRequest
+    StructureNodeUpdate
 )
 
 class StructureService:
@@ -99,13 +98,6 @@ class StructureService:
                  
         return sorted(root_nodes, key=lambda x: x.sort_order)
 
-    def create_node(self, node_data: StructureNodeCreate) -> StructureNode:
-        node = StructureNode(**node_data.model_dump())
-        self.db.add(node)
-        self.db.commit()
-        self.db.refresh(node)
-        return node
-
     def update_node(self, node_id: int, node_data: StructureNodeUpdate) -> Optional[StructureNode]:
         node = self.db.get(StructureNode, node_id)
         if not node:
@@ -125,13 +117,3 @@ class StructureService:
         self.db.delete(node)
         self.db.commit()
         return True
-
-    def reorder_nodes(self, reorder_data: StructureNodeReorderRequest):
-        for item in reorder_data.items:
-            stmt = (
-                update(StructureNode)
-                .where(StructureNode.id == item.id)
-                .values(sort_order=item.sort_order, parent_id=item.parent_id, level=item.level)
-            )
-            self.db.execute(stmt)
-        self.db.commit()

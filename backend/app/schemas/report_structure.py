@@ -18,6 +18,11 @@ class StructureNodeBase(BaseModel):
         description="图表配置列表 [{chart_type, sort_order, config}]"
     )
 
+    content_blocks: Optional[List[Dict[str, Any]]] = Field(
+        default_factory=list,
+        description="内容块配置列表 [{type, config}]"
+    )
+
     prompt_config_id: Optional[int] = Field(default=None, description="关联提示词配置")
     fixed_content: Optional[str] = Field(default=None, description="固定内容文本")
     
@@ -26,22 +31,15 @@ class StructureNodeBase(BaseModel):
     ai_reasoning: Optional[str] = Field(default=None, description="AI推荐理由")
     is_ai_generated: bool = Field(default=False, description="是否AI生成")
 
-class StructureNodeCreate(StructureNodeBase):
-    structure_id: int
-    parent_id: Optional[int] = None
-
 class StructureNodeUpdate(BaseModel):
     title: Optional[str] = None
-    sort_order: Optional[int] = None
     question_number: Optional[int] = None
     show_data_table: Optional[bool] = None
     show_ai_interpretation: Optional[bool] = None
     charts: Optional[List[Dict[str, Any]]] = None
+    content_blocks: Optional[List[Dict[str, Any]]] = None
     prompt_config_id: Optional[int] = None
     fixed_content: Optional[str] = None
-    parent_id: Optional[int] = None
-    level: Optional[int] = None
-    node_type: Optional[str] = None
 
 class StructureNodeResponse(StructureNodeBase):
     id: int
@@ -52,15 +50,6 @@ class StructureNodeResponse(StructureNodeBase):
 
     class Config:
         from_attributes = True
-
-class StructureNodeReorderItem(BaseModel):
-    id: int
-    sort_order: int
-    parent_id: Optional[int] = None
-    level: int
-
-class StructureNodeReorderRequest(BaseModel):
-    items: List[StructureNodeReorderItem]
 
 class ReportStructureBase(BaseModel):
     structure_name: str = Field(..., min_length=1, max_length=100, description="结构名称")

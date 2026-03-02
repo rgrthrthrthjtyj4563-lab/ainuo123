@@ -74,32 +74,24 @@
     </header>
 
     <!-- Sidebar -->
-    <aside class="w-64 bg-white border-r border-gray-200 fixed left-0 top-16 bottom-0 z-40">
+    <aside class="w-[260px] bg-white border-r border-gray-200 fixed left-0 top-16 bottom-0 z-40">
         <nav class="p-4 space-y-1">
-            <a href="index.html" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:text-[#1E1B4B]">
-                <i class="fas fa-home w-5"></i>
-                <span class="font-medium">首页</span>
-            </a>
             <a href="structure-config.html" class="sidebar-item active flex items-center space-x-3 px-4 py-3 rounded-lg text-[#1E1B4B]">
                 <i class="fas fa-sitemap w-5"></i>
                 <span class="font-medium">报告结构配置</span>
             </a>
-            <a href="report-create.html" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:text-[#1E1B4B]">
-                <i class="fas fa-plus-circle w-5"></i>
-                <span class="font-medium">生成新报告</span>
-            </a>
             <a href="reports.html" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:text-[#1E1B4B]">
                 <i class="fas fa-list w-5"></i>
-                <span class="font-medium">报告列表</span>
+                <span class="font-medium">报告管理</span>
             </a>
         </nav>
     </aside>
 
     <!-- Main Content -->
-    <main class="ml-64 pt-16 min-h-screen">
+    <main class="ml-[260px] pt-16 min-h-screen">
         <div class="flex h-[calc(100vh-4rem)]">
             <!-- Left Sidebar: Template List -->
-            <div class="w-80 bg-white border-r border-gray-200 flex flex-col">
+            <div class="w-[260px] bg-white border-r border-gray-200 flex flex-col">
                 <div class="p-4 border-b border-gray-200">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="font-semibold text-[#1E1B4B]">选择模板</h3>
@@ -134,7 +126,7 @@
                     </div>
                 </div>
 
-                <div id="outline-container" class="space-y-2 max-w-4xl">
+                <div id="outline-container" class="space-y-2">
                     <!-- Outline chapters will be loaded here -->
                 </div>
 
@@ -201,7 +193,7 @@
                 <div class="template-item cursor-pointer rounded-lg p-3 ${template.id === currentTemplateId ? 'active' : ''}" 
                      onclick="selectTemplate(this, ${template.id}, '${escapeAttr(template.template_name)}', '${escapeAttr(template.description)}')">
                     <div class="flex items-center justify-between mb-1">
-                        <span class="font-medium text-[#1E1B4B] text-sm">${escapeHtml(template.template_name)}</span>
+                        <span class="font-medium text-[#1E1B4B] text-sm break-words whitespace-normal">${escapeHtml(template.template_name)}</span>
                         <span class="text-xs px-2 py-0.5 rounded-full ${template.report_type === 'patient' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">
                             ${template.report_type === 'patient' ? '患者' : '医生'}
                         </span>
@@ -248,13 +240,13 @@
                     let html = `<div class="chapter-wrapper mb-2" data-id="${chapter.id}">`;
                     
                     html += `
-                    <div class="outline-item bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
+                    <div class="outline-item bg-white border border-gray-200 rounded-lg p-3 flex items-start justify-between">
+                        <div class="flex items-start space-x-3 min-w-0">
                             <div class="drag-handle cursor-move text-gray-400 hover:text-gray-600 px-2">
                                 <i class="fas fa-grip-vertical"></i>
                             </div>
                             <div class="flex flex-col">
-                                <span class="font-medium text-[#1E1B4B]">${escapeHtml(chapter.chapter_title)}</span>
+                                <span class="font-medium text-[#1E1B4B] break-words whitespace-normal">${escapeHtml(chapter.chapter_title)}</span>
                                 <span class="text-xs text-gray-500">${getChapterTypeLabel(chapter.chapter_type)}</span>
                             </div>
                         </div>

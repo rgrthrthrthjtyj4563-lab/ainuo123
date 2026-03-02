@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.models.database import get_db, TemplateExtraction
+from app.models.database import get_db, TemplateExtraction, StructureNode
 from app.services.word_extractor import WordStructureExtractor
 from app.schemas.report_structure import (
     ReportStructureCreate, ReportStructureUpdate, ReportStructureResponse, ReportStructureDetailResponse, ReportStructureListResponse,
-    StructureNodeCreate, StructureNodeUpdate, StructureNodeResponse,
-    StructureNodeReorderRequest, StructureImportRequest
+    StructureNodeUpdate, StructureNodeResponse,
+    StructureImportRequest
 )
 from app.services.structure_service import StructureService
 from app.models.schemas import DataResponse, ListResponse
@@ -79,7 +79,7 @@ async def create_structure(
     new_structure = service.create_structure(structure)
     return DataResponse(data=ReportStructureResponse.model_validate(new_structure))
 
-@router.get("/structures/{structure_id}", response_model=DataResponse)
+@router.get("/structures/{structure_id:int}", response_model=DataResponse)
 async def get_structure(
     structure_id: int,
     db: Session = Depends(get_db)
@@ -100,7 +100,7 @@ async def get_structure(
     
     return DataResponse(data=response)
 
-@router.put("/structures/{structure_id}", response_model=DataResponse)
+@router.put("/structures/{structure_id:int}", response_model=DataResponse)
 async def update_structure(
     structure_id: int,
     structure: ReportStructureUpdate,
@@ -113,7 +113,7 @@ async def update_structure(
         raise HTTPException(status_code=404, detail="结构不存在")
     return DataResponse(data=ReportStructureResponse.model_validate(updated_structure))
 
-@router.delete("/structures/{structure_id}", response_model=DataResponse)
+@router.delete("/structures/{structure_id:int}", response_model=DataResponse)
 async def delete_structure(
     structure_id: int,
     db: Session = Depends(get_db)
@@ -127,17 +127,7 @@ async def delete_structure(
 
 # Node operations
 
-@router.post("/structures/nodes", response_model=DataResponse)
-async def create_node(
-    node: StructureNodeCreate,
-    db: Session = Depends(get_db)
-):
-    """创建结构节点"""
-    service = StructureService(db)
-    new_node = service.create_node(node)
-    return DataResponse(data=StructureNodeResponse.model_validate(new_node))
-
-@router.put("/structures/nodes/{node_id}", response_model=DataResponse)
+@router.put("/structures/nodes/{node_id:int}", response_model=DataResponse)
 async def update_node(
     node_id: int,
     node: StructureNodeUpdate,
@@ -150,7 +140,7 @@ async def update_node(
         raise HTTPException(status_code=404, detail="节点不存在")
     return DataResponse(data=StructureNodeResponse.model_validate(updated_node))
 
-@router.delete("/structures/nodes/{node_id}", response_model=DataResponse)
+@router.delete("/structures/nodes/{node_id:int}", response_model=DataResponse)
 async def delete_node(
     node_id: int,
     db: Session = Depends(get_db)
@@ -162,17 +152,7 @@ async def delete_node(
         raise HTTPException(status_code=404, detail="节点不存在")
     return DataResponse(message="删除成功")
 
-@router.post("/structures/nodes/reorder", response_model=DataResponse)
-async def reorder_nodes(
-    reorder_data: StructureNodeReorderRequest,
-    db: Session = Depends(get_db)
-):
-    """重新排序节点"""
-    service = StructureService(db)
-    service.reorder_nodes(reorder_data)
-    return DataResponse(message="排序更新成功")
-
-@router.post("/structures/{structure_id}/import", response_model=DataResponse)
+@router.post("/structures/{structure_id:int}/import", response_model=DataResponse)
 async def import_structure_nodes(
     structure_id: int,
     request: StructureImportRequest,
@@ -186,11 +166,9 @@ async def import_structure_nodes(
     if not structure:
         raise HTTPException(status_code=404, detail="结构不存在")
         
-    # Recursive function to create nodes
     def create_nodes_recursive(nodes, parent_id=None):
         for node_data in nodes:
-            # Create the node
-            new_node = service.create_node(StructureNodeCreate(
+            new_node = StructureNode(
                 structure_id=structure_id,
                 parent_id=parent_id,
                 level=node_data.level,
@@ -200,17 +178,21 @@ async def import_structure_nodes(
                 question_number=node_data.question_number,
                 show_data_table=node_data.show_data_table,
                 show_ai_interpretation=node_data.show_ai_interpretation,
+                charts=node_data.charts,
+                content_blocks=node_data.content_blocks,
                 prompt_config_id=node_data.prompt_config_id,
                 fixed_content=node_data.fixed_content,
                 confidence_score=node_data.confidence_score,
                 ai_reasoning=node_data.ai_reasoning,
                 is_ai_generated=node_data.is_ai_generated
-            ))
-            
-            # Process children
+            )
+            db.add(new_node)
+            db.flush()
+
             if node_data.children:
                 create_nodes_recursive(node_data.children, new_node.id)
 
     create_nodes_recursive(request.nodes)
+    db.commit()
     
     return DataResponse(message="导入成功")

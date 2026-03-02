@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>维度配置 - 报告生成工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .sidebar-item {
+            transition: all 0.2s ease;
+        }
+        .sidebar-item:hover {
+            background-color: rgba(99, 102, 241, 0.1);
+        }
+        .sidebar-item.active {
+            background-color: rgba(99, 102, 241, 0.15);
+            border-left: 3px solid #6366F1;
+        }
+        .template-item {
+            transition: all 0.2s ease;
+        }
+        .template-item:hover {
+            background-color: rgba(99, 102, 241, 0.05);
+        }
+        .template-item.active {
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 3px solid #6366F1;
+        }
+        .dimension-card {
+            transition: all 0.2s ease;
+        }
+        .dimension-card:hover {
+            border-color: #6366F1;
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.1);
+        }
+        .question-row {
+            transition: all 0.2s ease;
+        }
+        .question-row:hover {
+            background-color: rgba(99, 102, 241, 0.03);
+        }
+        .btn-primary {
+            background-color: #6366F1;
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover {
+            background-color: #4F46E5;
+            opacity: 0.9;
+        }
+        .btn-success {
+            background-color: #10B981;
+            transition: all 0.2s ease;
+        }
+        .btn-success:hover {
+            background-color: #059669;
+            opacity: 0.9;
+        }
+        .btn-danger {
+            background-color: #EF4444;
+            transition: all 0.2s ease;
+        }
+        .btn-danger:hover {
+            background-color: #DC2626;
+            opacity: 0.9;
+        }
+        .modal-overlay {
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="bg-[#F5F3FF] min-h-screen">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 h-16 flex items-center px-6 fixed top-0 left-0 right-0 z-50">
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-[#6366F1] rounded-lg flex items-center justify-center">
+                <i class="fas fa-file-alt text-white text-sm"></i>
+            </div>
+            <h1 class="text-xl font-semibold text-[#1E1B4B]">报告生成工具</h1>
+        </div>
+        <div class="ml-auto flex items-center space-x-4">
+            <span class="text-sm text-gray-500">v1.0.0</span>
+            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                <i class="fas fa-user text-gray-600 text-sm"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-gray-200 fixed left-0 top-16 bottom-0 z-40">
+        <nav class="p-4 space-y-1">
+            <a href="structure-config.html" class="sidebar-item active flex items-center space-x-3 px-4 py-3 rounded-lg text-[#1E1B4B]">
+                <i class="fas fa-sitemap w-5"></i>
+                <span class="font-medium">报告结构配置</span>
+            </a>
+            <a href="reports.html" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:text-[#1E1B4B]">
+                <i class="fas fa-list w-5"></i>
+                <span class="font-medium">报告管理</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-64 pt-16 min-h-screen">
+        <div class="flex h-[calc(100vh-4rem)]">
+            <!-- Left Sidebar: Template List -->
+            <div class="w-80 bg-white border-r border-gray-200 flex flex-col">
+                <div class="p-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-[#1E1B4B]">维度模板</h3>
+                        <button onclick="openTemplateModal()" class="btn-primary text-white px-3 py-1.5 rounded-lg text-sm flex items-center space-x-1">
+                            <i class="fas fa-plus text-xs"></i>
+                            <span>新建</span>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <input type="text" id="search-template" placeholder="搜索模板..." 
+                            class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto p-2 space-y-1" id="template-list">
+                    <!-- Templates will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Right Side: Template Details -->
+            <div class="flex-1 overflow-y-auto p-6" id="template-details">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-[#1E1B4B]" id="current-template-name">请选择模板</h2>
+                        <p class="text-gray-500 mt-1" id="current-template-desc">从左侧选择一个模板查看详情</p>
+                    </div>
+                    <div class="flex items-center space-x-3" id="template-actions" style="display: none;">
+                        <button onclick="openDimensionModal()" class="btn-success text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                            <i class="fas fa-plus"></i>
+                            <span>添加维度</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="dimensions-container" class="space-y-6">
+                    <!-- Dimensions will be loaded here -->
+                </div>
+
+                <div id="empty-state" class="flex flex-col items-center justify-center py-20">
+                    <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-cog text-gray-400 text-3xl"></i>
+                    </div>
+                    <p class="text-gray-500">请从左侧选择一个维度模板</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Template Modal -->
+    <div id="template-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0 bg-black/50" onclick="closeTemplateModal()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+            <h3 class="text-lg font-semibold text-[#1E1B4B] mb-4">新建维度模板</h3>
+            <form id="template-form" onsubmit="saveTemplate(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">模板名称</label>
+                        <input type="text" name="name" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">报告类型</label>
+                        <select name="report_type" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]">
+                            <option value="">请选择</option>
+                            <option value="patient">患者问卷</option>
+                            <option value="doctor">医生问卷</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">描述</label>
+                        <textarea name="description" rows="3"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeTemplateModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
+                    <button type="submit" class="btn-primary text-white px-4 py-2 rounded-lg">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dimension Modal -->
+    <div id="dimension-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0 bg-black/50" onclick="closeDimensionModal()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl w-full max-w-lg p-6">
+            <h3 class="text-lg font-semibold text-[#1E1B4B] mb-4" id="dimension-modal-title">添加维度</h3>
+            <form id="dimension-form" onsubmit="saveDimension(event)">
+                <input type="hidden" name="template_id" id="dimension-template-id">
+                <input type="hidden" name="dimension_id" id="dimension-id">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">维度编号 <span class="text-red-500">*</span></label>
+                        <input type="text" name="dimension_number" placeholder="如：4.1" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">维度名称 <span class="text-red-500">*</span></label>
+                        <input type="text" name="dimension_title" required placeholder="请输入维度名称"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]">
+                    </div>
+                    <div class="border-t border-gray-200 pt-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">关联题目配置</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">题号 <span class="text-red-500">*</span></label>
+                                <select name="question_number" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]">
+                                    <option value="">请选择题号</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">小分析标题 <span class="text-red-500">*</span></label>
+                                <input type="text" name="analysis_title" required placeholder="如：用药依从性分析"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeDimensionModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
+                    <button type="submit" class="btn-primary text-white px-4 py-2 rounded-lg">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000/api/v1';
+        let currentTemplateId = null;
+
+        // Load templates
+        async function loadTemplates() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/templates`);
+                const data = await response.json();
+                if (data.code === 200) {
+                    const items = data?.data?.list || data?.data?.items || data?.data || [];
+                    renderTemplates(Array.isArray(items) ? items : []);
+                }
+            } catch (error) {
+                console.error('加载模板失败:', error);
+                renderMockTemplates();
+            }
+        }
+
+        function renderMockTemplates() {
+            const mockTemplates = [
+                { id: 1, name: '患者用药调研模板', report_type: '患者问卷', description: '用于收集患者用药行为数据' },
+                { id: 2, name: '医生处方调研模板', report_type: '医生问卷', description: '用于收集医生处方习惯数据' },
+                { id: 3, name: '患者满意度调研', report_type: '患者问卷', description: '患者满意度评估调研' }
+            ];
+            renderTemplates(mockTemplates);
+        }
+
+        function renderTemplates(templates) {
+            const container = document.getElementById('template-list');
+            if (!templates || templates.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            container.innerHTML = templates.map(template => {
+                const name = template.template_name || template.name || '';
+                const reportType = template.report_type || '';
+                const reportTypeLabel = reportType === 'patient' ? '患者问卷' : reportType === 'doctor' ? '医生问卷' : reportType;
+                const desc = template.description || '';
+                return `
+                <div class="template-item cursor-pointer rounded-lg p-3 ${template.id === currentTemplateId ? 'active' : ''}" 
+                     onclick="selectTemplate(this, ${template.id}, '${escapeAttr(name)}', '${escapeAttr(reportTypeLabel)}', '${escapeAttr(desc)}')">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-medium text-[#1E1B4B] text-sm">${escapeHtml(name)}</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full ${reportTypeLabel === '患者问卷' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">
+                            ${escapeHtml(reportTypeLabel)}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-500 truncate">${escapeHtml(desc || '暂无描述')}</p>
+                </div>
+            `;
+            }).join('');
+        }
+
+        function selectTemplate(element, id, name, reportType, description) {
+            currentTemplateId = id;
+            document.getElementById('current-template-name').textContent = name;
+            document.getElementById('current-template-desc').textContent = description || '暂无描述';
+            document.getElementById('template-actions').style.display = 'flex';
+            document.getElementById('empty-state').style.display = 'none';
+            
+            // Update active state
+            document.querySelectorAll('.template-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            if (element) {
+                element.classList.add('active');
+            }
+
+            // Load dimensions
+            loadDimensions(id);
+        }
+
+        async function loadDimensions(templateId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/templates/${templateId}/dimensions`);
+                const data = await response.json();
+                if (data.code === 200) {
+                    renderDimensions(data.data);
+                }
+            } catch (error) {
+                console.error('加载维度失败:', error);
+                // Use mock data if API fails
+                renderMockDimensions(templateId);
+            }
+        }
+
+        function renderMockDimensions(templateId) {
+            const mockDimensions = [
+                {
+                    id: 1,
+                    dimension_number: '4.1',
+                    dimension_title: '用药基础信息',
+                    description: '收集患者基本用药情况',
+                    questions: [
+                        { id: 1, question_number: 1, analysis_title: '目前正在服用的药物' },
+                        { id: 2, question_number: 2, analysis_title: '用药频率' }
+                    ]
+                },
+                {
+                    id: 2,
+                    dimension_number: '4.2',
+                    dimension_title: '用药行为与习惯',
+                    description: '分析患者用药习惯',
+                    questions: [
+                        { id: 3, question_number: 3, analysis_title: '用药依从性' },
+                        { id: 4, question_number: 4, analysis_title: '漏服原因' },
+                        { id: 5, question_number: 5, analysis_title: '药物存储方式' }
+                    ]
+                }
+            ];
+            renderDimensions(mockDimensions);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function escapeAttr(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/'/g, '&#39;')
+                .replace(/"/g, '&quot;')
+                .replace(/\n/g, ' ');
+        }
+
+        function renderDimensions(dimensions) {
+            const container = document.getElementById('dimensions-container');
+            if (!dimensions || dimensions.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-gray-50 rounded-xl p-8 text-center">
+                        <i class="fas fa-folder-open text-gray-300 text-4xl mb-3"></i>
+                        <p class="text-gray-500">暂无维度配置</p>
+                        <button onclick="openDimensionModal()" class="mt-3 text-[#6366F1] hover:underline text-sm">
+                            添加第一个维度
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = dimensions.map(dim => {
+                const question = dim.questions && dim.questions.length > 0 ? dim.questions[0] : null;
+                return `
+                <div class="dimension-card bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <div class="p-4 border-b border-gray-100 bg-gray-50/50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <span class="w-8 h-8 bg-[#6366F1]/10 rounded-lg flex items-center justify-center text-[#6366F1] font-semibold text-sm">
+                                    ${escapeHtml(dim.dimension_number)}
+                                </span>
+                                <div>
+                                    <h4 class="font-semibold text-[#1E1B4B]">${escapeHtml(dim.dimension_title)}</h4>
+                                    <p class="text-xs text-gray-500">${escapeHtml(dim.description || '')}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="editDimension(${dim.id}, '${escapeHtml(dim.dimension_number)}', '${escapeHtml(dim.dimension_title)}', ${question ? question.question_number : 'null'}, '${question ? escapeHtml(question.analysis_title) : ''}')" 
+                                    class="text-gray-400 hover:text-[#6366F1] p-1.5">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteDimension(${dim.id})" 
+                                    class="text-gray-400 hover:text-red-500 p-1.5">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        ${question ? `
+                            <div class="question-row flex items-center justify-between p-3 rounded-lg border border-gray-100">
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-xs font-medium text-[#6366F1] bg-[#6366F1]/10 px-2 py-1 rounded">
+                                        Q${question.question_number}
+                                    </span>
+                                    <span class="text-sm text-gray-700">${escapeHtml(question.analysis_title)}</span>
+                                </div>
+                                <span class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                                    已关联Excel第${question.question_number}题
+                                </span>
+                            </div>
+                        ` : `
+                            <div class="text-center py-6 text-gray-400">
+                                <i class="fas fa-link text-2xl mb-2"></i>
+                                <p class="text-sm">暂无题目关联</p>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        // Modal functions
+        function openTemplateModal() {
+            document.getElementById('template-modal').classList.remove('hidden');
+        }
+
+        function closeTemplateModal() {
+            document.getElementById('template-modal').classList.add('hidden');
+            document.getElementById('template-form').reset();
+        }
+
+        function openDimensionModal() {
+            if (!currentTemplateId) {
+                alert('请先选择一个模板');
+                return;
+            }
+            document.getElementById('dimension-template-id').value = currentTemplateId;
+            document.getElementById('dimension-id').value = '';
+            document.getElementById('dimension-modal-title').textContent = '添加维度';
+            
+            // Populate question numbers
+            const select = document.querySelector('#dimension-form select[name="question_number"]');
+            select.innerHTML = '<option value="">请选择题号</option>';
+            for (let i = 1; i <= 100; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Q${i}`;
+                select.appendChild(option);
+            }
+            
+            document.getElementById('dimension-modal').classList.remove('hidden');
+        }
+        
+        function editDimension(id, dimensionNumber, dimensionTitle, questionNumber, analysisTitle) {
+            document.getElementById('dimension-template-id').value = currentTemplateId;
+            document.getElementById('dimension-id').value = id;
+            document.getElementById('dimension-modal-title').textContent = '编辑维度';
+            
+            // Populate form
+            const form = document.getElementById('dimension-form');
+            form.querySelector('[name="dimension_number"]').value = dimensionNumber;
+            form.querySelector('[name="dimension_title"]').value = dimensionTitle;
+            
+            // Populate question numbers
+            const select = form.querySelector('select[name="question_number"]');
+            select.innerHTML = '<option value="">请选择题号</option>';
+            for (let i = 1; i <= 100; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Q${i}`;
+                if (questionNumber && i === parseInt(questionNumber)) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            }
+            
+            form.querySelector('[name="analysis_title"]').value = analysisTitle || '';
+            
+            document.getElementById('dimension-modal').classList.remove('hidden');
+        }
+
+        function closeDimensionModal() {
+            document.getElementById('dimension-modal').classList.add('hidden');
+            document.getElementById('dimension-form').reset();
+        }
+
+        // Save functions
+        async function saveTemplate(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const payload = {
+                    template_name: data.name || data.template_name || '',
+                    report_type: data.report_type === '患者问卷' ? 'patient' : data.report_type === '医生问卷' ? 'doctor' : data.report_type,
+                    description: data.description || ''
+                };
+                const response = await fetch(`${API_BASE_URL}/templates`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (result.code === 200) {
+                    closeTemplateModal();
+                    loadTemplates();
+                }
+            } catch (error) {
+                console.error('保存模板失败:', error);
+                alert('保存失败，请重试');
+            }
+        }
+
+        async function saveDimension(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData);
+            
+            // Remove question fields from dimension data if they are empty
+            if (!data.question_number) delete data.question_number;
+            if (!data.analysis_title) delete data.analysis_title;
+            
+            const dimensionId = document.getElementById('dimension-id').value;
+            
+            try {
+                let response;
+                if (dimensionId) {
+                    // Update existing dimension
+                    response = await fetch(`${API_BASE_URL}/dimensions/${dimensionId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                } else {
+                    data.sort_order = parseInt(data.sort_order) || 0;
+                    const dimensionData = {
+                        dimension_number: data.dimension_number,
+                        dimension_title: data.dimension_title,
+                        sort_order: data.sort_order
+                    };
+                    if (data.question_number && data.analysis_title) {
+                        dimensionData.question_number = parseInt(data.question_number);
+                        dimensionData.analysis_title = data.analysis_title;
+                    }
+
+                    response = await fetch(`${API_BASE_URL}/templates/${data.template_id}/dimensions`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(dimensionData)
+                    });
+                }
+                
+                const result = await response.json();
+                if (result.code === 200) {
+                    closeDimensionModal();
+                    loadDimensions(currentTemplateId);
+                } else {
+                    alert('保存失败: ' + (result.message || '未知错误'));
+                }
+            } catch (error) {
+                console.error('保存维度失败:', error);
+                alert('保存失败，请重试');
+            }
+        }
+
+        async function deleteDimension(id) {
+            if (!confirm('确定要删除此维度吗？')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/dimensions/${id}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                if (result.code === 200) {
+                    loadDimensions(currentTemplateId);
+                }
+            } catch (error) {
+                console.error('删除维度失败:', error);
+                alert('删除失败，请重试');
+            }
+        }
+
+        async function deleteQuestion(id) {
+            if (!confirm('确定要删除此问题吗？')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/questions/${id}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                if (result.code === 200) {
+                    loadDimensions(currentTemplateId);
+                }
+            } catch (error) {
+                console.error('删除问题失败:', error);
+                alert('删除失败，请重试');
+            }
+        }
+
+        // Search functionality
+        document.getElementById('search-template').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('.template-item').forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(searchTerm) ? 'block' : 'none';
+            });
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadTemplates);
+    </script>
+</body>
+</html>

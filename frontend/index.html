@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>报告生成工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .sidebar-item {
+            transition: all 0.2s ease;
+        }
+        .sidebar-item:hover {
+            background-color: rgba(99, 102, 241, 0.1);
+        }
+        .sidebar-item.active {
+            background-color: rgba(99, 102, 241, 0.15);
+            border-left: 3px solid #6366F1;
+        }
+        .dimension-card {
+            transition: all 0.2s ease;
+        }
+        .dimension-card:hover {
+            border-color: #6366F1;
+        }
+        .btn-primary {
+            background-color: #6366F1;
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover {
+            background-color: #4F46E5;
+            opacity: 0.9;
+        }
+        .btn-success {
+            background-color: #10B981;
+            transition: all 0.2s ease;
+        }
+        .btn-success:hover {
+            background-color: #059669;
+            opacity: 0.9;
+        }
+        .step-item {
+            transition: all 0.3s ease;
+        }
+        .step-item.active .step-circle {
+            background-color: #6366F1;
+            color: white;
+        }
+        .step-item.completed .step-circle {
+            background-color: #10B981;
+            color: white;
+        }
+        .step-line {
+            transition: all 0.3s ease;
+        }
+        .step-line.completed {
+            background-color: #10B981;
+        }
+    </style>
+</head>
+<body class="bg-[#F5F3FF] min-h-screen">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 h-16 flex items-center px-6 fixed top-0 left-0 right-0 z-50">
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-[#6366F1] rounded-lg flex items-center justify-center">
+                <i class="fas fa-file-alt text-white text-sm"></i>
+            </div>
+            <h1 class="text-xl font-semibold text-[#1E1B4B]">报告生成工具</h1>
+        </div>
+        <div class="ml-auto flex items-center space-x-4">
+            <span class="text-sm text-gray-500">v1.0.0</span>
+            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                <i class="fas fa-user text-gray-600 text-sm"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-gray-200 fixed left-0 top-16 bottom-0 z-40">
+        <nav class="p-4 space-y-1">
+            <a href="structure-config.html" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:text-[#1E1B4B]">
+                <i class="fas fa-sitemap w-5"></i>
+                <span class="font-medium">报告结构配置</span>
+            </a>
+            <a href="reports.html" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:text-[#1E1B4B]">
+                <i class="fas fa-list w-5"></i>
+                <span class="font-medium">报告管理</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-64 pt-16 min-h-screen">
+        <div class="p-8">
+            <!-- Page Header -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-[#1E1B4B]">欢迎使用报告生成工具</h2>
+                <p class="text-gray-500 mt-2">快速生成专业的问卷调研分析报告</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-xl p-6 border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">维度模板</p>
+                            <p class="text-3xl font-bold text-[#6366F1] mt-1" id="template-count">-</p>
+                        </div>
+                        <div class="w-12 h-12 bg-[#6366F1]/10 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-cog text-[#6366F1] text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-6 border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">已生成报告</p>
+                            <p class="text-3xl font-bold text-[#10B981] mt-1" id="report-count">-</p>
+                        </div>
+                        <div class="w-12 h-12 bg-[#10B981]/10 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-file-alt text-[#10B981] text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-6 border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">生成中</p>
+                            <p class="text-3xl font-bold text-orange-500 mt-1" id="generating-count">-</p>
+                        </div>
+                        <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-spinner fa-spin text-orange-500 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-[#1E1B4B] mb-4">快速操作</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <a href="report-create.html" class="dimension-card border-2 border-dashed border-[#6366F1] rounded-xl p-6 hover:bg-[#6366F1]/5 cursor-pointer flex items-center space-x-4">
+                        <div class="w-14 h-14 bg-[#6366F1]/10 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-plus text-[#6366F1] text-2xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-[#1E1B4B]">生成新报告</h4>
+                            <p class="text-sm text-gray-500 mt-1">选择模板，上传Excel数据，一键生成</p>
+                        </div>
+                    </a>
+                    <a href="structure-config.html" class="dimension-card border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-[#6366F1] hover:bg-[#6366F1]/5 cursor-pointer flex items-center space-x-4">
+                        <div class="w-14 h-14 bg-gray-100 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-sitemap text-gray-600 text-2xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-[#1E1B4B]">配置报告结构</h4>
+                            <p class="text-sm text-gray-500 mt-1">管理报告的章节、维度和分析配置</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // API基础URL
+        const API_BASE_URL = 'http://localhost:8000/api/v1';
+
+        // 加载统计数据
+        async function loadStats() {
+            try {
+                // 获取模板数量
+                const templatesRes = await fetch(`${API_BASE_URL}/templates?page_size=1`);
+                const templatesData = await templatesRes.json();
+                if (templatesData.code === 200) {
+                    document.getElementById('template-count').textContent = templatesData.data.total;
+                }
+
+                // 获取报告数量
+                const reportsRes = await fetch(`${API_BASE_URL}/reports?page_size=1`);
+                const reportsData = await reportsRes.json();
+                if (reportsData.code === 200) {
+                    document.getElementById('report-count').textContent = reportsData.data.total;
+                }
+
+                // 获取生成中数量
+                const generatingRes = await fetch(`${API_BASE_URL}/reports?page_size=1&status=generating`);
+                const generatingData = await generatingRes.json();
+                if (generatingData.code === 200) {
+                    document.getElementById('generating-count').textContent = generatingData.data.total;
+                }
+            } catch (error) {
+                console.error('加载统计数据失败:', error);
+            }
+        }
+
+        // 页面加载时执行
+        document.addEventListener('DOMContentLoaded', loadStats);
+    </script>
+</body>
+</html>

@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>报告预览 - 补中益气口服液调研报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .editable-text { border: 2px solid transparent; border-radius: 4px; padding: 8px 12px; transition: all 0.2s ease; min-height: 40px; position: relative; }
+        .editable-text:hover { border-color: #6366F1; background-color: rgba(99, 102, 241, 0.02); }
+        .editable-text.editing { border-color: #6366F1; background-color: white; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
+        .editable-text.saved { border-color: #10B981; background-color: rgba(16, 185, 129, 0.05); }
+        .ai-optimize-btn { opacity: 0; transition: all 0.2s ease; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); }
+        .editable-text:hover .ai-optimize-btn, .editable-text.editing .ai-optimize-btn { opacity: 1; }
+        .section-title { font-size: 1.5rem; font-weight: 700; color: #1E1B4B; margin-top: 3rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 3px solid #6366F1; }
+        .subsection-title { font-size: 1.25rem; font-weight: 600; color: #374151; margin-top: 2rem; margin-bottom: 1rem; }
+        .chart-container { background: white; border-radius: 12px; padding: 24px; margin: 20px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #E5E7EB; }
+        .chart-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin: 20px 0; }
+        .report-content { line-height: 1.8; color: #374151; }
+        .status-indicator { display: inline-flex; align-items: center; font-size: 0.75rem; margin-left: 8px; }
+        .status-saving { color: #F59E0B; }
+        .status-saved { color: #10B981; }
+        .sidebar-item { transition: all 0.2s ease; }
+        .sidebar-item:hover { background-color: rgba(99, 102, 241, 0.1); }
+        .sidebar-item.active { background-color: rgba(99, 102, 241, 0.15); border-left: 3px solid #6366F1; }
+        .btn-primary { background-color: #6366F1; transition: all 0.2s ease; }
+        .btn-primary:hover { background-color: #4F46E5; opacity: 0.9; }
+        .btn-success { background-color: #10B981; transition: all 0.2s ease; }
+        .btn-success:hover { background-color: #059669; opacity: 0.9; }
+        .chart-title { font-size: 1rem; font-weight: 600; color: #1E1B4B; margin-bottom: 16px; text-align: center; }
+        @media (max-width: 1024px) { .chart-grid-2 { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body class="bg-[#F5F3FF] min-h-screen">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 h-16 flex items-center px-6 fixed top-0 left-0 right-0 z-50">
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-[#6366F1] rounded-lg flex items-center justify-center">
+                <i class="fas fa-file-alt text-white text-sm"></i>
+            </div>
+            <h1 class="text-xl font-semibold text-[#1E1B4B]">报告生成工具</h1>
+        </div>
+        <div class="ml-auto flex items-center space-x-4">
+            <button onclick="saveAllChanges()" class="btn-success text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                <i class="fas fa-save"></i><span>保存所有修改</span>
+            </button>
+            <button onclick="downloadWord()" class="btn-primary text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                <i class="fas fa-download"></i><span>下载Word</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-gray-200 fixed left-0 top-16 bottom-0 z-40 overflow-y-auto">
+        <nav class="p-4 space-y-1">
+            <a href="structure-config.html" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:text-[#1E1B4B]">
+                <i class="fas fa-sitemap w-5"></i><span class="font-medium">报告结构配置</span>
+            </a>
+            <a href="reports.html" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:text-[#1E1B4B]">
+                <i class="fas fa-list w-5"></i><span class="font-medium">报告管理</span>
+            </a>
+        </nav>
+
+        <div class="mt-6 px-4">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">报告导航</h3>
+            <nav class="space-y-1" id="report-nav"></nav>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-64 pt-16 min-h-screen">
+        <div class="max-w-6xl mx-auto p-8">
+            <!-- Report Header -->
+            <div class="bg-white rounded-xl border border-gray-200 p-8 mb-6">
+                <div class="text-center mb-6">
+                    <h1 class="text-3xl font-bold text-[#1E1B4B] mb-4" id="report-title">问卷调研服务结算</h1>
+                    <p class="text-gray-600 mb-2">服务承诺：确保数据真实可靠，分析专业严谨，提供有价值的市场洞察，保持与客户的密切沟通，确保项目高质量完成。</p>
+                    <div class="text-sm text-gray-500 mt-4">
+                        <span>服务单位：北京玖麟空科技有限公司</span>
+                        <span class="mx-2">|</span>
+                        <span>日期：2025年10月24日</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-center space-x-8 text-sm text-gray-600 border-t border-gray-200 pt-6">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-pills text-[#6366F1]"></i><span id="product-name">补中益气口服液</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-map-marker-alt text-[#6366F1]"></i><span id="survey-region">湖南省</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-users text-[#6366F1]"></i><span id="sample-count">601份有效问卷</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-calendar-alt text-[#6366F1]"></i><span id="survey-time">2025年09月</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Content -->
+            <div class="bg-white rounded-xl border border-gray-200 p-8">
+                <div id="report-content" class="report-content">
+                    
+                    <!-- 前言 -->
+                    <div id="section-preface" class="mb-8">
+                        <h2 class="section-title">前言</h2>
+                        <div class="editable-text mb-4" data-id="preface-content">
+                            <p class="whitespace-pre-wrap">补中益气口服液作为经典补气类中成药，基于"补中益气、升阳举陷"的中医理论，在消化功能不良、中气下陷型子宫脱垂等脾胃气虚相关病症的临床治疗中应用广泛。随着中西医结合诊疗模式的普及，该药物与西药联用的安全性、剂型适配性及学术支持等临床实际需求，逐渐成为影响其诊疗价值发挥的关键因素。为精准把握湖南省临床医生对该药物的使用反馈，客观评估其疗效表现、安全特性、使用便捷性及配套服务质量，特开展本次专项调研。
+
+本次调研采用问卷调研形式，覆盖湖南省内各级医疗机构的临床一线医生，围绕疗效满意度、症状缓解效果、联用安全性、说明书清晰度、剂型便利性、患者依从性、口感反馈、成本匹配度、储运便捷性及学术与病例支持等维度展开系统调查。调研样本覆盖不同层级医疗场景，数据具有较强的代表性与客观性。
+
+通过对调研数据的深度分析，本报告旨在全面呈现补中益气口服液在湖南地区的临床应用现状与医生评价倾向，挖掘其优势亮点与待优化方向，为药物临床推广策略优化、产品迭代升级及学术服务完善提供数据支撑，进而助力提升该药物的临床应用价值，更好地满足脾胃气虚证患者的诊疗需求。</p>
+                            <button class="ai-optimize-btn bg-[#6366F1] text-white px-3 py-1.5 rounded-lg text-xs flex items-center space-x-1 hover:bg-[#4F46E5]" onclick="event.stopPropagation(); openOptimizeModal('preface-content', this.parentElement.querySelector('p').textContent)">
+                                <i class="fas fa-magic"></i><span>AI优化</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 项目背景 -->
+                    <div id="section-background" class="mb-8">
+                        <h2 class="section-title">一、项目背景</h2>
+                        <div class="editable-text mb-4" data-id="background-content">
+                            <p class="whitespace-pre-wrap">中医药在慢性病防治、功能调理等领域的独特优势日益凸显，补气类中成药因契合临床常见脾胃气虚证的诊疗需求，市场应用持续扩大。补中益气口服液源自经典方剂，凭借明确的功效定位，已成为临床治疗消化功能不良、中气下陷型子宫脱垂等病症的常用药物之一。
+
+在湖南地区，受地域气候、饮食结构等因素影响，脾胃气虚相关病症发病率较高，补中益气口服液在各级医疗机构的临床应用频次逐步提升。然而，随着临床用药需求的多元化，医生对药物的疗效稳定性、联用安全性、剂型适配性、说明书指导性及学术支持等方面的要求不断提高。当前，关于该药物在湖南地区的临床实际使用效果、医生认可度及潜在优化需求，缺乏系统性的调研数据支撑，一定程度上影响了药物临床应用效率与推广质量。
+
+为填补这一数据空白，精准对接临床医生的用药需求，为药物生产企业优化产品设计、完善服务体系提供决策依据，同时为湖南地区脾胃气虚证的规范化诊疗提供参考，特组织开展本次补中益气口服液临床使用满意度调研。</p>
+                            <button class="ai-optimize-btn bg-[#6366F1] text-white px-3 py-1.5 rounded-lg text-xs flex items-center space-x-1 hover:bg-[#4F46E5]" onclick="event.stopPropagation(); openOptimizeModal('background-content', this.parentElement.querySelector('p').textContent)">
+                                <i class="fas fa-magic"></i><span>AI优化</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 问卷结果分析 -->
+                    <div id="section-results" class="mb-8">
+                        <h2 class="section-title">四、问卷结果分析</h2>
+                        <div class="editable-text mb-4" data-id="results-intro">
+                            <p class="whitespace-pre-wrap">本次调研以601份有效问卷为分析基础，围绕药品疗效、用药安全性、用药便利性、用药经济性、用药指导与支持服务、临床评价6个维度，对12道问题的结果展开深入统计分析。</p>
+                            <button class="ai-optimize-btn bg-[#6366F1] text-white px-3 py-1.5 rounded-lg text-xs flex items-center space-x-1 hover:bg-[#4F46E5]" onclick="event.stopPropagation(); openOptimizeModal('results-intro', this.parentElement.querySelector('p').textContent)">
+                                <i class="fas fa-magic"></i><span>AI优化</span>
+                            </button>
+                        </div>
+
+                        <!-- 4.1 药品疗效 -->
+                        <div id="section-efficacy" class="mb-12">
+                            <h3 class="subsection-title">4.1 药品疗效</h3>
+                            
+                            <!-- 图表区域 -->
+                            <div class="chart-grid-2">
+                                <div class="bg-white p-4 rounded-lg border border-gray-200">
+                                    <h4 class="chart-title">图1：消化功能改善效果满意度分布</h4>
+                                    <canvas id="chart-efficacy-1" style="max-height: 300px;"></canvas>
+                                </div>
+                                <div class="bg-white p-4 rounded-lg border border-gray-200">
+                                    <h4 class="chart-title">图2：中气下陷型子宫脱垂症状缓解效果</h4>
+                                    <canvas id="chart-efficacy-2" style="max-height: 300px;"></canvas>
+                                </div>
+                            </div>
+
+                            <h4 class="text-lg font-semibold text-gray-800 mt-6 mb-3">消化功能改善效果分析</h4>
+                            <div class="editable-text mb-4" data-id="efficacy-analysis-1">
+                                <p class="whitespace-pre-wrap">从数据结果看，补中益气口服液治疗消化功能不良的疗效获得临床医生的广泛认可。49%的医生选择"非常满意"，认可多数患者进食量明显恢复；44%的医生选择"满意"，认为部分患者进食量有所改善，两者合计达93%，充分验证了该药物在改善消化功能、提升患者进食量方面的核心疗效。仅6%的医生认为疗效一般，仅少数患者有轻微变化；表示不满意的医生占比不足1%，几乎可以忽略不计。整体数据反映出该药物在消化功能不良治疗中疗效稳定，是临床医生信赖的常用药物之一。</p>
+                                <button class="ai-optimize-btn bg-[#6366F1] text-white px-3 py-1.5 rounded-lg text-xs flex items-center space-x-1 hover:bg-[#4F46E5]" onclick="event.stopPropagation(); openOptimizeModal('efficacy-analysis-1', this.parentElement.querySelector('p').textContent)">
+                                    <i class="fas fa-magic"></i><span>AI优化</span>
+                                </button>
+                            </div>
+
+                            <h4 class="text-lg font-semibold text-gray-800 mt-6 mb-3">中气下陷型子宫脱垂症状缓解效果分析</h4>
+                            <div class="editable-text mb-4" data-id="efficacy-analysis-2">
+                                <p class="whitespace-pre-wrap">在中气下陷型子宫脱垂症状缓解方面，补中益气口服液的临床表现同样亮眼。42%的医生认为多数患者脱垂程度减轻，43%的医生表示部分患者脱垂症状缓解，两者累计占比85%，凸显了该药物在升阳举陷、改善脱垂症状上的显著临床价值。相较于消化功能不良的疗效评价，本题选择"一般"的比例略高，达14%，这可能与子宫脱垂病症本身的复杂性、病程长短等因素相关，部分重症患者仅能获得轻微改善。仅1位医生认为患者脱垂症状无任何变化，进一步说明该药物针对此类病症的缓解效果具有高度一致性。</p>
+                                <button class="ai-optimize-btn bg-[#6366F1] text-white px-3 py-1.5 rounded-lg text-xs flex items-center space-x-1 hover:bg-[#4F46E5]" onclick="event.stopPropagation(); openOptimizeModal('efficacy-analysis-2', this.parentElement.querySelector('p').textContent)">
+                                    <i class="fas fa-magic"></i><span>AI优化</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 4.2 用药安全性 -->
+                        <div id="section-safety" class="mb-12">
+                            <h3 class="subsection-title">4.2 用药安全性</h3>
+                            
+                            <div class="chart-container">
+                                <h4 class="chart-title">图3：中西药联用安全性评估</h4>
+                                <canvas id="chart-safety-1" style="max-height: 350px;"></canvas>
+                            </div>
+
+                            <h4 class="text-lg font-semibold text-gray-800 mt-6 mb-3">中西药联用安全性分析</h4>
+                            <div class="editable-text mb-4" data-id="safety-analysis">
+                                <p class="whitespace-pre-wrap">用药安全性是临床联合用药的核心考量，调研结果显示补中益气口服液与西药联用的安全性表现优异。58%的医生表示从未出现联用不良反应，25%的医生反映偶有轻微腹胀，但不影响继续用药，两者合计83%，说明该药物与常用西药联用的兼容性良好，不良反应发生率低且程度轻微。仅3%的医生报告少数患者出现恶心、头晕需暂停联用，此类情况占比极低，可能与患者个体体质或用药剂量相关。此外，14%的医生表示暂未联合使用，为后续拓展联用场景、积累更多安全性数据留下了空间，整体而言该药物的联用安全性值得临床信赖。</p>
+                                <button class="ai-optimize-btn bg-[#6366F1] text-white px-3 py-1.5 rounded-lg text-xs flex items-center space-x-1 hover:bg-[#4F46E5]" onclick="event.stopPropagation(); openOptimizeModal('safety-analysis', this.parentElement.querySelector('p').textContent)">
+                                    <i class="fas fa-magic"></i><span>AI优化</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 4.3 用药便利性 -->
+                        <div id="section-convenience" class="mb-12">
+                            <h3 class="subsection-title">4.3 用药便利性</h3>
+                            
+                            <div class="chart-grid-2">
+                                <div class="bg-white p-4 rounded-lg border border-gray-200">
+                                    <h4 class="chart-title">图4：单剂量包装便利性评价</h4>
+                                    <canvas id="chart-convenience-1" style="max-height: 300px;"></canvas>
+                                </div>
+                                <div class="bg-white p-4 rounded-lg border border-gray-200">
+                                    <h4 class="chart-title">图5：患者服药依从性对比</h4>
+                                    <canvas id="chart-convenience-2" style="max-height: 300px;"></canvas>
+                                </div>
+                            </div>
+
+                            <h4 class="text-lg font-semibold text-gray-800 mt-6 mb-3">单剂量包装便利性分析</h4>
+                            <div class="editable-text mb-4" data-id="convenience-analysis-1">
+                                <p class="whitespace-pre-wrap">数据结果显示，单剂量包装（10ml/支）的便利性获得临床医生的高度认可。59%的医生认为可精准匹配患者每日用药剂量需求，30%的医生表示基本符合多数患者的剂量开具习惯，累计占比89%，说明该包装设计契合临床用药场景，能减少剂量换算误差，提升处方开具效率。仅有10%的医生反映部分患者需拆分剂量，增加操作麻烦，这可能与少数患者的个体化剂量需求相关，需进一步优化剂量规格适配性。</p>
+                                <button class="ai-optimize-btn bg-[#6366F1] text-white px-3 py-1.5 rounded-lg text-xs flex items-center space-x-1 hover:bg-[#4F46E5]" onclick="event.stopPropagation(); openOptimizeModal('convenience-analysis-1', this.parentElement.querySelector('p').textContent)">
+                                    <i class="fas fa-magic"></i><span>AI优化</span>
+                                </button>
+                            </div>
+
+                            <h4 class="text-lg font-semibold text-gray-800 mt-6 mb-3">患者服药依从性分析</h4>
+                            <div class="editable-text mb-4" data-id="convenience-analysis-2">
+                                <p class="whitespace-pre-wrap">根据调研数据可以看出，与同类补气中成药相比，补中益气口服液的患者服药依从性表现突出。63%的医生认为其依从性明显更高，核心原因是口服液剂型更易被患者接受，这一比例充分体现了剂型的独特优势。26%的医生表示该药物依从性略高，多数患者能按要求服药，两者合计89%，说明该药物在提升患者用药依从性上远超或优于同类产品。</p>
+                                <button class="ai-optimize-btn bg-[#6366F1] text-white px-3 py-1.5 rounded-lg text-xs flex items-center space-x-1 hover:bg-[#4F46E5]" onclick="event.stopPropagation(); openOptimizeModal('convenience-analysis-2', this.parentElement.querySelector('p').textContent)">
+                                    <i class="fas fa-magic"></i><span>AI优化</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- AI Optimize Modal -->
+    <div id="optimize-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/50" onclick="closeOptimizeModal()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-[#1E1B4B]">AI 优化内容</h3>
+                <button onclick="closeOptimizeModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">优化要求</label>
+                <textarea id="optimize-prompt" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6366F1]" rows="3" placeholder="请输入优化要求，例如：使语言更专业、增加数据支撑、简化表达等"></textarea>
+            </div>
+
+            <div id="optimize-preview" class="hidden mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">优化结果预览</label>
+                <div class="bg-gray-50 rounded-lg p-4 max-h-60 overflow-y-auto">
+                    <p id="optimized-content" class="text-gray-700 whitespace-pre-wrap"></p>
+                </div>
+            </div>
+
+            <div id="optimize-loading" class="hidden mb-4 text-center py-8">
+                <i class="fas fa-spinner fa-spin text-3xl text-[#6366F1] mb-3"></i>
+                <p class="text-gray-600">AI 正在优化内容...</p>
+            </div>
+
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeOptimizeModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
+                <button onclick="applyOptimizedContent()" id="apply-btn" class="btn-success text-white px-4 py-2 rounded-lg hidden">应用优化结果</button>
+                <button onclick="performOptimization()" id="optimize-btn" class="btn-primary text-white px-4 py-2 rounded-lg">开始优化</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+        let currentEditingElement = null;
+        let optimizedText = '';
+
+        // Initialize charts when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initCharts();
+            setupEditableTexts();
+            generateNavigation();
+        });
+
+        function initCharts() {
+            // Chart 1: 消化功能改善效果
+            new Chart(document.getElementById('chart-efficacy-1'), {
+                type: 'pie',
+                data: {
+                    labels: ['非常满意 49%', '满意 44%', '一般 6%', '不满意 1%'],
+                    datasets: [{
+                        data: [49, 44, 6, 1],
+                        backgroundColor: ['#6366F1', '#818CF8', '#A5B4FC', '#E0E7FF']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 15, font: { size: 11 } } }
+                    }
+                }
+            });
+
+            // Chart 2: 子宫脱垂症状缓解
+            new Chart(document.getElementById('chart-efficacy-2'), {
+                type: 'pie',
+                data: {
+                    labels: ['多数患者脱垂程度减轻 42%', '部分脱垂症状缓解 43%', '仅少数患者有轻微改善 14%', '无任何变化 1%'],
+                    datasets: [{
+                        data: [42, 43, 14, 1],
+                        backgroundColor: ['#10B981', '#34D399', '#6EE7B7', '#D1FAE5']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 15, font: { size: 11 } } }
+                    }
+                }
+            });
+
+            // Chart 3: 用药安全性
+            new Chart(document.getElementById('chart-safety-1'), {
+                type: 'bar',
+                data: {
+                    labels: ['从未出现不良反应', '偶有轻微腹胀', '暂未联合使用', '少数患者需暂停'],
+                    datasets: [{
+                        label: '医生占比 (%)',
+                        data: [58, 25, 14, 3],
+                        backgroundColor: '#6366F1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 100, ticks: { callback: function(value) { return value + '%'; } } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Chart 4: 单剂量包装便利性
+            new Chart(document.getElementById('chart-convenience-1'), {
+                type: 'pie',
+                data: {
+                    labels: ['可精准匹配剂量需求 59%', '基本符合开具习惯 30%', '需拆分剂量 10%', '规格单一 1%'],
+                    datasets: [{
+                        data: [59, 30, 10, 1],
+                        backgroundColor: ['#F59E0B', '#FBBF24', '#FCD34D', '#FEF3C7']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 15, font: { size: 11 } } }
+                    }
+                }
+            });
+
+            // Chart 5: 患者服药依从性
+            new Chart(document.getElementById('chart-convenience-2'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['依从性明显更高 63%', '依从性略高 26%', '依从性相当 11%'],
+                    datasets: [{
+                        data: [63, 26, 11],
+                        backgroundColor: ['#10B981', '#34D399', '#6EE7B7']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 15, font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+
+        function setupEditableTexts() {
+            document.querySelectorAll('.editable-text').forEach(wrapper => {
+                wrapper.addEventListener('click', function(e) {
+                    if (e.target.tagName === 'BUTTON' || this.classList.contains('editing')) return;
+                    enableEditing(this);
+                });
+            });
+        }
+
+        function enableEditing(wrapper) {
+            // Close other editing
+            document.querySelectorAll('.editable-text.editing').forEach(el => disableEditing(el));
+            
+            wrapper.classList.add('editing');
+            const p = wrapper.querySelector('p');
+            p.contentEditable = true;
+            p.focus();
+            
+            // Add indicator
+            const indicator = document.createElement('span');
+            indicator.className = 'status-indicator status-saving';
+            indicator.innerHTML = '<i class="fas fa-pen"></i> 编辑中';
+            wrapper.appendChild(indicator);
+            
+            // Save on blur
+            p.addEventListener('blur', function() {
+                saveChanges(wrapper);
+            }, { once: true });
+            
+            // Ctrl+Enter to save
+            p.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault();
+                    p.blur();
+                }
+            });
+        }
+
+        function disableEditing(wrapper) {
+            wrapper.classList.remove('editing');
+            const p = wrapper.querySelector('p');
+            p.contentEditable = false;
+            const indicator = wrapper.querySelector('.status-indicator');
+            if (indicator) indicator.remove();
+        }
+
+        function saveChanges(wrapper) {
+            disableEditing(wrapper);
+            
+            wrapper.classList.add('saved');
+            const savedIndicator = document.createElement('span');
+            savedIndicator.className = 'status-indicator status-saved';
+            savedIndicator.innerHTML = '<i class="fas fa-check"></i> 已保存';
+            wrapper.appendChild(savedIndicator);
+            
+            setTimeout(() => {
+                wrapper.classList.remove('saved');
+                savedIndicator.remove();
+            }, 2000);
+        }
+
+        function generateNavigation() {
+            const nav = document.getElementById('report-nav');
+            const sections = [
+                { id: 'preface', title: '前言' },
+                { id: 'background', title: '一、项目背景' },
+                { id: 'results', title: '四、问卷结果分析' }
+            ];
+            
+            sections.forEach(section => {
+                const link = document.createElement('a');
+                link.href = '#section-' + section.id;
+                link.className = 'flex items-center space-x-2 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 hover:text-[#6366F1]';
+                link.innerHTML = `<span>${section.title}</span>`;
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    document.getElementById('section-' + section.id).scrollIntoView({ behavior: 'smooth' });
+                };
+                nav.appendChild(link);
+            });
+        }
+
+        // Modal functions
+        function openOptimizeModal(elementId, text) {
+            currentEditingElement = document.querySelector('[data-id="' + elementId + '"]');
+            document.getElementById('optimize-prompt').value = '';
+            document.getElementById('optimize-preview').classList.add('hidden');
+            document.getElementById('optimize-loading').classList.add('hidden');
+            document.getElementById('apply-btn').classList.add('hidden');
+            document.getElementById('optimize-btn').classList.remove('hidden');
+            document.getElementById('optimize-modal').classList.remove('hidden');
+        }
+
+        function closeOptimizeModal() {
+            document.getElementById('optimize-modal').classList.add('hidden');
+            currentEditingElement = null;
+        }
+
+        function performOptimization() {
+            const prompt = document.getElementById('optimize-prompt').value;
+            document.getElementById('optimize-loading').classList.remove('hidden');
+            document.getElementById('optimize-btn').disabled = true;
+            
+            setTimeout(() => {
+                const original = currentEditingElement.querySelector('p').textContent;
+                if (prompt.includes('专业') || prompt.includes('学术')) {
+                    optimizedText = original.replace(/非常/g, '显著').replace(/很多/g, '大量') + '\n\n[已优化为更专业的学术表达]';
+                } else {
+                    optimizedText = original + '\n\n[AI优化：语言更流畅，逻辑更清晰]';
+                }
+                
+                document.getElementById('optimize-loading').classList.add('hidden');
+                document.getElementById('optimize-preview').classList.remove('hidden');
+                document.getElementById('optimized-content').textContent = optimizedText;
+                document.getElementById('optimize-btn').classList.add('hidden');
+                document.getElementById('apply-btn').classList.remove('hidden');
+                document.getElementById('optimize-btn').disabled = false;
+            }, 1500);
+        }
+
+        function applyOptimizedContent() {
+            if (currentEditingElement && optimizedText) {
+                currentEditingElement.querySelector('p').textContent = optimizedText;
+                saveChanges(currentEditingElement);
+            }
+            closeOptimizeModal();
+            showToast('内容已优化并保存');
+        }
+
+        function saveAllChanges() {
+            showToast('所有修改已保存');
+        }
+
+        function downloadWord() {
+            showToast('正在生成Word文档...');
+            setTimeout(() => showToast('Word文档生成完成'), 1500);
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        }
+    </script>
+</body>
+</html>

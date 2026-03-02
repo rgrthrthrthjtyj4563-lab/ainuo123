@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大纲配置 - 报告生成工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        * {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .sidebar-item {
+            transition: all 0.2s ease;
+        }
+        .sidebar-item:hover {
+            background-color: rgba(99, 102, 241, 0.1);
+        }
+        .sidebar-item.active {
+            background-color: rgba(99, 102, 241, 0.15);
+            border-left: 3px solid #6366F1;
+        }
+        .template-item {
+            transition: all 0.2s ease;
+        }
+        .template-item:hover {
+            background-color: rgba(99, 102, 241, 0.05);
+        }
+        .template-item.active {
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 3px solid #6366F1;
+        }
+        .outline-item {
+            transition: all 0.2s ease;
+        }
+        .outline-item:hover {
+            border-color: #6366F1;
+            box-shadow: 0 2px 4px -1px rgba(99, 102, 241, 0.1);
+        }
+        .outline-item.ghost {
+            opacity: 0.5;
+            background: #f3f4f6;
+        }
+        .btn-primary {
+            background-color: #6366F1;
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover {
+            background-color: #4F46E5;
+            opacity: 0.9;
+        }
+        .modal-overlay {
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="bg-[#F5F3FF] min-h-screen">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 h-16 flex items-center px-6 fixed top-0 left-0 right-0 z-50">
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-[#6366F1] rounded-lg flex items-center justify-center">
+                <i class="fas fa-file-alt text-white text-sm"></i>
+            </div>
+            <h1 class="text-xl font-semibold text-[#1E1B4B]">报告生成工具</h1>
+        </div>
+        <div class="ml-auto flex items-center space-x-4">
+            <span class="text-sm text-gray-500">v1.0.0</span>
+            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                <i class="fas fa-user text-gray-600 text-sm"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-gray-200 fixed left-0 top-16 bottom-0 z-40">
+        <nav class="p-4 space-y-1">
+            <a href="index.html" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:text-[#1E1B4B]">
+                <i class="fas fa-home w-5"></i>
+                <span class="font-medium">首页</span>
+            </a>
+            <a href="structure-config.html" class="sidebar-item active flex items-center space-x-3 px-4 py-3 rounded-lg text-[#1E1B4B]">
+                <i class="fas fa-sitemap w-5"></i>
+                <span class="font-medium">报告结构配置</span>
+            </a>
+            <a href="report-create.html" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:text-[#1E1B4B]">
+                <i class="fas fa-plus-circle w-5"></i>
+                <span class="font-medium">生成新报告</span>
+            </a>
+            <a href="reports.html" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:text-[#1E1B4B]">
+                <i class="fas fa-list w-5"></i>
+                <span class="font-medium">报告列表</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-64 pt-16 min-h-screen">
+        <div class="flex h-[calc(100vh-4rem)]">
+            <!-- Left Sidebar: Template List -->
+            <div class="w-80 bg-white border-r border-gray-200 flex flex-col">
+                <div class="p-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-[#1E1B4B]">选择模板</h3>
+                    </div>
+                    <div class="relative">
+                        <input type="text" id="search-template" placeholder="搜索模板..." 
+                            class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto p-2 space-y-1" id="template-list">
+                    <!-- Templates will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Right Side: Outline Config -->
+            <div class="flex-1 overflow-y-auto p-6" id="outline-details">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-[#1E1B4B]" id="current-template-name">请选择模板</h2>
+                        <p class="text-gray-500 mt-1" id="current-template-desc">从左侧选择一个模板配置其大纲</p>
+                    </div>
+                    <div class="flex items-center space-x-3" id="outline-actions" style="display: none;">
+                        <button onclick="resetOutline()" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+                            <i class="fas fa-undo"></i>
+                            <span>重置为默认</span>
+                        </button>
+                        <button onclick="openChapterModal()" class="btn-primary text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                            <i class="fas fa-plus"></i>
+                            <span>添加自定义章节</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="outline-container" class="space-y-2 max-w-4xl">
+                    <!-- Outline chapters will be loaded here -->
+                </div>
+
+                <div id="empty-state" class="flex flex-col items-center justify-center py-20">
+                    <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-list-ol text-gray-400 text-3xl"></i>
+                    </div>
+                    <p class="text-gray-500">请从左侧选择一个模板</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Chapter Modal -->
+    <div id="chapter-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0 bg-black/50" onclick="closeChapterModal()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+            <h3 class="text-lg font-semibold text-[#1E1B4B] mb-4" id="chapter-modal-title">添加章节</h3>
+            <form id="chapter-form" onsubmit="saveChapter(event)">
+                <input type="hidden" name="chapter_id" id="chapter-id">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">章节标题 <span class="text-red-500">*</span></label>
+                        <input type="text" name="chapter_title" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]">
+                    </div>
+                    <!-- 可以添加更多字段，如生成方式等 -->
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeChapterModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
+                    <button type="submit" class="btn-primary text-white px-4 py-2 rounded-lg">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000/api/v1';
+        let currentTemplateId = null;
+        let sortable = null;
+
+        // Load templates
+        async function loadTemplates() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/templates`);
+                const data = await response.json();
+                if (data.code === 200) {
+                    const items = data?.data?.list || data?.data?.items || data?.data || [];
+                    renderTemplates(Array.isArray(items) ? items : []);
+                }
+            } catch (error) {
+                console.error('加载模板失败:', error);
+            }
+        }
+
+        function renderTemplates(templates) {
+            const container = document.getElementById('template-list');
+            if (!templates || templates.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            container.innerHTML = templates.map(template => {
+                return `
+                <div class="template-item cursor-pointer rounded-lg p-3 ${template.id === currentTemplateId ? 'active' : ''}" 
+                     onclick="selectTemplate(this, ${template.id}, '${escapeAttr(template.template_name)}', '${escapeAttr(template.description)}')">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-medium text-[#1E1B4B] text-sm">${escapeHtml(template.template_name)}</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full ${template.report_type === 'patient' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">
+                            ${template.report_type === 'patient' ? '患者' : '医生'}
+                        </span>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        function selectTemplate(element, id, name, description) {
+            currentTemplateId = id;
+            document.getElementById('current-template-name').textContent = name;
+            document.getElementById('current-template-desc').textContent = description || '暂无描述';
+            document.getElementById('outline-actions').style.display = 'flex';
+            document.getElementById('empty-state').style.display = 'none';
+            
+            document.querySelectorAll('.template-item').forEach(item => item.classList.remove('active'));
+            if (element) element.classList.add('active');
+
+            loadOutline(id);
+        }
+
+        async function loadOutline(templateId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/templates/${templateId}/outline`);
+                const result = await response.json();
+                if (result.code === 200) {
+                    renderOutline(result.data.list || []);
+                }
+            } catch (error) {
+                console.error('加载大纲失败:', error);
+            }
+        }
+
+        function renderOutline(chapters) {
+            const container = document.getElementById('outline-container');
+            
+            // 递归渲染函数
+            const renderItems = (items, level = 1) => {
+                return items.map(chapter => {
+                    const paddingLeft = (level - 1) * 20;
+                    const isCustom = chapter.chapter_type === 'custom';
+                    
+                    let html = `<div class="chapter-wrapper mb-2" data-id="${chapter.id}">`;
+                    
+                    html += `
+                    <div class="outline-item bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="drag-handle cursor-move text-gray-400 hover:text-gray-600 px-2">
+                                <i class="fas fa-grip-vertical"></i>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="font-medium text-[#1E1B4B]">${escapeHtml(chapter.chapter_title)}</span>
+                                <span class="text-xs text-gray-500">${getChapterTypeLabel(chapter.chapter_type)}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer" ${chapter.is_enabled ? 'checked' : ''} 
+                                       onchange="toggleChapter(${chapter.id}, this.checked)">
+                                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#6366F1]"></div>
+                            </label>
+                            <button onclick="editChapter(${chapter.id}, '${escapeAttr(chapter.chapter_title)}')" class="text-gray-400 hover:text-[#6366F1] p-1.5">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            ${isCustom ? `
+                            <button onclick="deleteChapter(${chapter.id})" class="text-gray-400 hover:text-red-500 p-1.5">
+                                <i class="fas fa-trash"></i>
+                            </button>` : ''}
+                        </div>
+                    </div>
+                    `;
+                    
+                    if (chapter.children && chapter.children.length > 0) {
+                        html += `<div class="children-container ml-8 mt-2 space-y-2 border-l-2 border-gray-100 pl-4">${renderItems(chapter.children, level + 1)}</div>`;
+                    }
+                    
+                    html += `</div>`;
+                    return html;
+                }).join('');
+            };
+
+            container.innerHTML = renderItems(chapters);
+
+            // Initialize Sortable
+            if (sortable) sortable.destroy();
+            sortable = new Sortable(container, {
+                animation: 150,
+                handle: '.drag-handle',
+                ghostClass: 'ghost',
+                onEnd: function (evt) {
+                    saveOrder();
+                }
+            });
+        }
+
+        function getChapterTypeLabel(type) {
+            const map = {
+                'preface': '前言',
+                'background': '项目背景',
+                'project_info': '项目开展情况',
+                'survey_description': '问卷说明',
+                'dimension_analysis': '问卷结果分析',
+                'conclusion': '调研结果',
+                'suggestions': '建议',
+                'question_original': '问卷原文',
+                'disclaimer': '免责声明',
+                'custom': '自定义',
+                'dimension_analysis_sub': '维度子章节'
+            };
+            return map[type] || type;
+        }
+
+        async function toggleChapter(id, isEnabled) {
+            try {
+                await fetch(`${API_BASE_URL}/outline/chapters/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_enabled: isEnabled })
+                });
+            } catch (error) {
+                console.error('更新状态失败:', error);
+                alert('更新失败，请重试');
+            }
+        }
+
+        async function resetOutline() {
+            if (!confirm('确定要重置大纲吗？这将删除所有自定义修改。')) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/templates/${currentTemplateId}/outline/reset`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                if (result.code === 200) {
+                    renderOutline(result.data.list);
+                }
+            } catch (error) {
+                console.error('重置失败:', error);
+            }
+        }
+
+        function openChapterModal() {
+            document.getElementById('chapter-id').value = '';
+            document.getElementById('chapter-modal-title').textContent = '添加自定义章节';
+            document.getElementById('chapter-form').reset();
+            document.getElementById('chapter-modal').classList.remove('hidden');
+        }
+
+        function editChapter(id, title) {
+            document.getElementById('chapter-id').value = id;
+            document.getElementById('chapter-modal-title').textContent = '编辑章节';
+            const form = document.getElementById('chapter-form');
+            form.querySelector('[name="chapter_title"]').value = title;
+            document.getElementById('chapter-modal').classList.remove('hidden');
+        }
+
+        function closeChapterModal() {
+            document.getElementById('chapter-modal').classList.add('hidden');
+        }
+
+        async function saveChapter(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData);
+            const id = data.chapter_id;
+            
+            try {
+                let response;
+                if (id) {
+                    response = await fetch(`${API_BASE_URL}/outline/chapters/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chapter_title: data.chapter_title })
+                    });
+                } else {
+                    response = await fetch(`${API_BASE_URL}/outline/chapters`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            template_id: currentTemplateId,
+                            chapter_title: data.chapter_title,
+                            chapter_type: 'custom',
+                            sort_order: 999 // Put at end by default
+                        })
+                    });
+                }
+                
+                const result = await response.json();
+                if (result.code === 200) {
+                    closeChapterModal();
+                    loadOutline(currentTemplateId);
+                }
+            } catch (error) {
+                console.error('保存章节失败:', error);
+                alert('保存失败');
+            }
+        }
+
+        async function deleteChapter(id) {
+            if (!confirm('确定要删除此章节吗？')) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/outline/chapters/${id}`, {
+                    method: 'DELETE'
+                });
+                if (response.ok) {
+                    loadOutline(currentTemplateId);
+                }
+            } catch (error) {
+                console.error('删除失败:', error);
+            }
+        }
+
+        async function saveOrder() {
+            const items = [];
+            document.querySelectorAll('#outline-container > .chapter-wrapper').forEach((el, index) => {
+                items.push({
+                    id: parseInt(el.dataset.id),
+                    sort_order: index + 1
+                });
+            });
+
+            try {
+                await fetch(`${API_BASE_URL}/outline/chapters/reorder`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items })
+                });
+            } catch (error) {
+                console.error('保存排序失败:', error);
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function escapeAttr(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/'/g, '&#39;')
+                .replace(/"/g, '&quot;')
+                .replace(/\n/g, ' ');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadTemplates);
+    </script>
+</body>
+</html>

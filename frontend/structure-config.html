@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>报告结构配置 - 报告生成工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        * {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .sidebar-item {
+            transition: all 0.2s ease;
+        }
+        .sidebar-item:hover {
+            background-color: rgba(99, 102, 241, 0.1);
+        }
+        .sidebar-item.active {
+            background-color: rgba(99, 102, 241, 0.15);
+            border-left: 3px solid #6366F1;
+        }
+        .structure-item {
+            transition: all 0.2s ease;
+        }
+        .structure-item:hover {
+            background-color: rgba(99, 102, 241, 0.05);
+        }
+        .structure-item.active {
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 3px solid #6366F1;
+        }
+        .node-item {
+            transition: all 0.2s ease;
+        }
+        .node-item:hover {
+            border-color: #6366F1;
+            box-shadow: 0 2px 4px -1px rgba(99, 102, 241, 0.1);
+        }
+        .node-item.ghost {
+            opacity: 0.5;
+            background: #f3f4f6;
+        }
+        .btn-primary {
+            background-color: #6366F1;
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover {
+            background-color: #4F46E5;
+            opacity: 0.9;
+        }
+        .modal-overlay {
+            backdrop-filter: blur(4px);
+        }
+        .nested-sortable {
+            min-height: 10px;
+        }
+    </style>
+</head>
+<body class="bg-[#F5F3FF] min-h-screen">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 h-16 flex items-center px-6 fixed top-0 left-0 right-0 z-50">
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-[#6366F1] rounded-lg flex items-center justify-center">
+                <i class="fas fa-file-alt text-white text-sm"></i>
+            </div>
+            <h1 class="text-xl font-semibold text-[#1E1B4B]">报告生成工具</h1>
+        </div>
+        <div class="ml-auto flex items-center space-x-4">
+            <span class="text-sm text-gray-500">v2.0.0</span>
+            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                <i class="fas fa-user text-gray-600 text-sm"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-gray-200 fixed left-0 top-16 bottom-0 z-40">
+        <nav class="p-4 space-y-1">
+            <a href="structure-config.html" class="sidebar-item active flex items-center space-x-3 px-4 py-3 rounded-lg text-[#1E1B4B]">
+                <i class="fas fa-sitemap w-5"></i>
+                <span class="font-medium">报告结构配置</span>
+            </a>
+            <a href="reports.html" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:text-[#1E1B4B]">
+                <i class="fas fa-list w-5"></i>
+                <span class="font-medium">报告管理</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-64 pt-16 min-h-screen">
+        <div class="flex h-[calc(100vh-4rem)]">
+            <!-- Left Sidebar: Structure List -->
+            <div class="w-80 bg-white border-r border-gray-200 flex flex-col">
+                <div class="p-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-[#1E1B4B]">结构列表</h3>
+                        <div class="flex items-center space-x-3">
+                            <button onclick="openImportModal()" class="text-[#6366F1] hover:text-[#4F46E5]" title="从Word导入">
+                                <i class="fas fa-file-import"></i>
+                            </button>
+                            <button onclick="openStructureModal()" class="text-[#6366F1] hover:text-[#4F46E5]" title="新建结构">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <input type="text" id="search-structure" placeholder="搜索结构..." 
+                            class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto p-2 space-y-1" id="structure-list">
+                    <!-- Structures will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Right Side: Structure Config -->
+            <div class="flex-1 overflow-y-auto p-6" id="structure-details">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-[#1E1B4B]" id="current-structure-name">请选择结构</h2>
+                        <p class="text-gray-500 mt-1" id="current-structure-desc">从左侧选择一个结构进行配置</p>
+                    </div>
+                    <div class="flex items-center space-x-3" id="structure-actions" style="display: none;">
+                        <button onclick="editStructure()" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+                            <i class="fas fa-edit"></i>
+                            <span>编辑属性</span>
+                        </button>
+                        <button onclick="openNodeModal()" class="btn-primary text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                            <i class="fas fa-plus"></i>
+                            <span>添加根节点</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="nodes-container" class="space-y-2 max-w-5xl nested-sortable">
+                    <!-- Nodes will be loaded here -->
+                </div>
+
+                <div id="empty-state" class="flex flex-col items-center justify-center py-20">
+                    <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-sitemap text-gray-400 text-3xl"></i>
+                    </div>
+                    <p class="text-gray-500">请从左侧选择一个结构</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Structure Modal -->
+    <div id="structure-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0 bg-black/50" onclick="closeStructureModal()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+            <h3 class="text-lg font-semibold text-[#1E1B4B] mb-4" id="structure-modal-title">创建新结构</h3>
+            <form id="structure-form" onsubmit="saveStructure(event)">
+                <input type="hidden" name="structure_id" id="structure-id">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">结构名称 <span class="text-red-500">*</span></label>
+                        <input type="text" name="structure_name" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">报告类型 <span class="text-red-500">*</span></label>
+                        <select name="report_type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]">
+                            <option value="doctor">医生问卷</option>
+                            <option value="patient">患者问卷</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">分析层级深度 <span class="text-red-500">*</span></label>
+                        <select name="analysis_depth" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]">
+                            <option value="3">三层（维度+小分析）</option>
+                            <option value="2">两层（仅维度）</option>
+                            <option value="1">单层（无维度）</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">描述</label>
+                        <textarea name="description" rows="3"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeStructureModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
+                    <button type="submit" class="btn-primary text-white px-4 py-2 rounded-lg">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Node Modal -->
+    <div id="node-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0 bg-black/50" onclick="closeNodeModal()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg font-semibold text-[#1E1B4B] mb-4" id="node-modal-title">添加节点</h3>
+            <form id="node-form" onsubmit="saveNode(event)">
+                <input type="hidden" name="node_id" id="node-id">
+                <input type="hidden" name="parent_id" id="node-parent-id">
+                <input type="hidden" name="level" id="node-level" value="1">
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">节点类型 <span class="text-red-500">*</span></label>
+                        <select name="node_type" id="node-type" required onchange="handleNodeTypeChange()"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]">
+                            <option value="ai_chapter">AI生成章节</option>
+                            <option value="fixed_content">固定内容章节</option>
+                            <option value="container">容器节点</option>
+                            <option value="data_analysis">数据分析节点</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">节点标题 <span class="text-red-500">*</span></label>
+                        <input type="text" name="title" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]">
+                    </div>
+
+                    <!-- Data Analysis Fields -->
+                    <div id="field-question-number" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">关联题号 (Q)</label>
+                        <input type="number" name="question_number" min="1"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]">
+                    </div>
+
+                    <div id="field-display-options" class="hidden space-y-2">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" name="show_data_table" checked class="rounded text-[#6366F1] focus:ring-[#6366F1]">
+                            <span class="text-sm text-gray-700">显示数据表格</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" name="show_ai_interpretation" class="rounded text-[#6366F1] focus:ring-[#6366F1]">
+                            <span class="text-sm text-gray-700">显示AI解读</span>
+                        </label>
+                    </div>
+
+                    <!-- 图表配置 -->
+                    <div id="field-charts-config" class="hidden space-y-4 mt-4 border-t border-gray-200 pt-4">
+                        
+                        <!-- 图表类型多选 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">关联图表</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="flex items-center space-x-2 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <input type="checkbox" name="chart_type" value="pie" class="rounded text-[#6366F1]">
+                                    <span class="text-sm">饼图</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <input type="checkbox" name="chart_type" value="bar" class="rounded text-[#6366F1]">
+                                    <span class="text-sm">柱状图</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <input type="checkbox" name="chart_type" value="horizontal_bar" class="rounded text-[#6366F1]">
+                                    <span class="text-sm">条形图</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <input type="checkbox" name="chart_type" value="radar" class="rounded text-[#6366F1]">
+                                    <span class="text-sm">雷达图</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fixed Content Fields -->
+                    <div id="field-fixed-content" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">固定内容文本</label>
+                        <textarea name="fixed_content" rows="4"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]"></textarea>
+                    </div>
+
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeNodeModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
+                    <button type="submit" class="btn-primary text-white px-4 py-2 rounded-lg">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div id="import-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0 bg-black/50" onclick="closeImportModal()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg font-semibold text-[#1E1B4B] mb-4">从Word导入结构</h3>
+            
+            <div id="import-step-1" class="space-y-4">
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#6366F1] transition-colors cursor-pointer"
+                     onclick="document.getElementById('word-file').click()">
+                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-600">点击上传 Word 文件 (.docx)</p>
+                    <p class="text-xs text-gray-400 mt-1">支持 Heading 1-3 自动识别</p>
+                    <input type="file" id="word-file" accept=".docx" class="hidden" onchange="handleFileSelect(this)">
+                </div>
+            </div>
+
+            <div id="import-step-2" class="hidden space-y-4">
+                <div class="flex items-center justify-between">
+                    <h4 class="font-medium text-gray-700">预览结构</h4>
+                    <span class="text-xs text-gray-500" id="import-stats"></span>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-4 max-h-[400px] overflow-y-auto border border-gray-200">
+                    <div id="import-preview-tree" class="space-y-2 text-sm"></div>
+                </div>
+
+                <div class="border-t border-gray-200 pt-4">
+                    <h4 class="font-medium text-gray-700 mb-2">保存配置</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">结构名称</label>
+                            <input type="text" id="import-structure-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">报告类型</label>
+                            <select id="import-report-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <option value="doctor">医生问卷</option>
+                                <option value="patient">患者问卷</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 mt-6">
+                <button type="button" onclick="closeImportModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
+                <button type="button" id="btn-import-confirm" onclick="confirmImport()" class="btn-primary text-white px-4 py-2 rounded-lg hidden">确认导入</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000/api/v1';
+        let currentStructureId = null;
+        let currentStructure = null;
+
+        // Load structures
+        async function loadStructures() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/structures`);
+                const data = await response.json();
+                if (data.code === 200) {
+                    renderStructures(data.data.list || []);
+                }
+            } catch (error) {
+                console.error('加载结构失败:', error);
+            }
+        }
+
+        function renderStructures(list) {
+            const container = document.getElementById('structure-list');
+            container.innerHTML = list.map(item => `
+                <div class="structure-item cursor-pointer rounded-lg p-3 ${item.id === currentStructureId ? 'active' : ''}" 
+                     onclick="selectStructure(${item.id})">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-medium text-[#1E1B4B] text-sm">${escapeHtml(item.structure_name)}</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full ${item.report_type === 'patient' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">
+                            ${item.report_type === 'patient' ? '患者' : '医生'}
+                        </span>
+                    </div>
+                    <div class="text-xs text-gray-500 truncate">${escapeHtml(item.description || '无描述')}</div>
+                </div>
+            `).join('');
+        }
+
+        async function selectStructure(id) {
+            currentStructureId = id;
+            try {
+                const response = await fetch(`${API_BASE_URL}/structures/${id}`);
+                const result = await response.json();
+                if (result.code === 200) {
+                    currentStructure = result.data;
+                    document.getElementById('current-structure-name').textContent = currentStructure.structure_name;
+                    document.getElementById('current-structure-desc').textContent = currentStructure.description || '暂无描述';
+                    document.getElementById('structure-actions').style.display = 'flex';
+                    document.getElementById('empty-state').style.display = 'none';
+                    
+                    renderNodes(currentStructure.nodes);
+                    loadStructures(); // Refresh active state
+                }
+            } catch (error) {
+                console.error('加载结构详情失败:', error);
+            }
+        }
+
+        function renderNodes(nodes) {
+            const container = document.getElementById('nodes-container');
+            container.innerHTML = renderNodeTree(nodes);
+            
+            // Initialize Sortable for root and nested lists
+            initSortable(container);
+        }
+
+        function renderNodeTree(nodes, parentId = null) {
+            if (!nodes || nodes.length === 0) return '';
+            
+            return nodes.map(node => `
+                <div class="node-wrapper mb-2" data-id="${node.id}" data-parent="${parentId || ''}" data-level="${node.level}">
+                    <div class="node-item bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="drag-handle cursor-move text-gray-400 hover:text-gray-600 px-2">
+                                <i class="fas fa-grip-vertical"></i>
+                            </div>
+                            <div class="flex flex-col">
+                                <div class="flex items-center space-x-2">
+                                    <span class="font-medium text-[#1E1B4B]">${escapeHtml(node.title)}</span>
+                                    ${node.question_number ? `<span class="text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">Q${node.question_number}</span>` : ''}
+                                </div>
+                                <span class="text-xs text-gray-500">${getNodeTypeLabel(node.node_type)}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            ${node.node_type === 'container' ? `
+                            <button onclick="openNodeModal(${node.id}, ${node.level + 1})" class="text-gray-400 hover:text-[#6366F1] p-1.5" title="添加子节点">
+                                <i class="fas fa-plus"></i>
+                            </button>` : ''}
+                            <button onclick="editNode(${node.id})" class="text-gray-400 hover:text-[#6366F1] p-1.5" title="编辑">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteNode(${node.id})" class="text-gray-400 hover:text-red-500 p-1.5" title="删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="children-container ml-8 mt-2 space-y-2 border-l-2 border-gray-100 pl-4 nested-sortable" data-parent="${node.id}">
+                        ${renderNodeTree(node.children, node.id)}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function initSortable(el) {
+            new Sortable(el, {
+                group: 'nested',
+                animation: 150,
+                handle: '.drag-handle',
+                ghostClass: 'ghost',
+                onEnd: function (evt) {
+                    saveOrder();
+                }
+            });
+            
+            // Recursively init for children containers
+            el.querySelectorAll('.nested-sortable').forEach(childEl => {
+                initSortable(childEl);
+            });
+        }
+
+        function getNodeTypeLabel(type) {
+            const map = {
+                'ai_chapter': 'AI生成章节',
+                'fixed_content': '固定内容',
+                'container': '容器节点',
+                'data_analysis': '数据分析'
+            };
+            return map[type] || type;
+        }
+
+        // Modal Functions
+        function openStructureModal() {
+            document.getElementById('structure-id').value = '';
+            document.getElementById('structure-modal-title').textContent = '创建新结构';
+            document.getElementById('structure-form').reset();
+            document.getElementById('structure-modal').classList.remove('hidden');
+        }
+
+        function editStructure() {
+            if (!currentStructure) return;
+            document.getElementById('structure-id').value = currentStructure.id;
+            document.getElementById('structure-modal-title').textContent = '编辑结构';
+            const form = document.getElementById('structure-form');
+            form.querySelector('[name="structure_name"]').value = currentStructure.structure_name;
+            form.querySelector('[name="report_type"]').value = currentStructure.report_type;
+            form.querySelector('[name="analysis_depth"]').value = currentStructure.analysis_depth;
+            form.querySelector('[name="description"]').value = currentStructure.description || '';
+            document.getElementById('structure-modal').classList.remove('hidden');
+        }
+
+        function closeStructureModal() {
+            document.getElementById('structure-modal').classList.add('hidden');
+        }
+
+        async function saveStructure(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData);
+            const id = data.structure_id;
+            
+            try {
+                const url = id ? `${API_BASE_URL}/structures/${id}` : `${API_BASE_URL}/structures`;
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (result.code === 200) {
+                    closeStructureModal();
+                    loadStructures();
+                    if (id) selectStructure(id);
+                }
+            } catch (error) {
+                console.error('保存失败:', error);
+            }
+        }
+
+        function openNodeModal(parentId = null, level = 1) {
+            document.getElementById('node-id').value = '';
+            document.getElementById('node-parent-id').value = parentId || '';
+            document.getElementById('node-level').value = level;
+            document.getElementById('node-modal-title').textContent = '添加节点';
+            document.getElementById('node-form').reset();
+            handleNodeTypeChange();
+            document.getElementById('node-modal').classList.remove('hidden');
+        }
+
+        function editNode(id) {
+            // Find node data recursively (simple search)
+            const findNode = (nodes) => {
+                for (let node of nodes) {
+                    if (node.id === id) return node;
+                    if (node.children) {
+                        const found = findNode(node.children);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            };
+            
+            const node = findNode(currentStructure.nodes);
+            if (!node) return;
+
+            document.getElementById('node-id').value = node.id;
+            document.getElementById('node-parent-id').value = node.parent_id || '';
+            document.getElementById('node-level').value = node.level;
+            document.getElementById('node-modal-title').textContent = '编辑节点';
+            
+            const form = document.getElementById('node-form');
+            form.querySelector('[name="title"]').value = node.title;
+            form.querySelector('[name="node_type"]').value = node.node_type;
+            if (node.question_number) form.querySelector('[name="question_number"]').value = node.question_number;
+            form.querySelector('[name="show_data_table"]').checked = node.show_data_table;
+            form.querySelector('[name="show_ai_interpretation"]').checked = node.show_ai_interpretation;
+            
+            // Restore charts
+            const chartInputs = form.querySelectorAll('input[name="chart_type"]');
+            chartInputs.forEach(input => input.checked = false);
+            if (node.charts && Array.isArray(node.charts)) {
+                const chartTypes = node.charts.map(c => c.chart_type);
+                chartInputs.forEach(input => {
+                    if (chartTypes.includes(input.value)) input.checked = true;
+                });
+            }
+
+            if (node.fixed_content) form.querySelector('[name="fixed_content"]').value = node.fixed_content;
+            
+            handleNodeTypeChange();
+            document.getElementById('node-modal').classList.remove('hidden');
+        }
+
+        function closeNodeModal() {
+            document.getElementById('node-modal').classList.add('hidden');
+        }
+
+        function handleNodeTypeChange() {
+            const type = document.getElementById('node-type').value;
+            const fieldQuestion = document.getElementById('field-question-number');
+            const fieldDisplay = document.getElementById('field-display-options');
+            const fieldFixed = document.getElementById('field-fixed-content');
+            const fieldCharts = document.getElementById('field-charts-config');
+
+            fieldQuestion.classList.add('hidden');
+            fieldDisplay.classList.add('hidden');
+            fieldFixed.classList.add('hidden');
+            if (fieldCharts) fieldCharts.classList.add('hidden');
+
+            // 优化：所有节点都支持图表和题号配置（除了纯容器节点可能不需要题号，但为了灵活性也开放）
+            // 容器节点通常用于结构组织，可能不直接关联数据，但为了保持一致性，这里只排除纯文本容器
+            
+            // 题号配置：所有非容器节点都可能需要数据
+            if (type !== 'container') {
+                fieldQuestion.classList.remove('hidden');
+                fieldDisplay.classList.remove('hidden');
+                if (fieldCharts) fieldCharts.classList.remove('hidden');
+            }
+            
+            // 固定内容配置：仅 fixed_content 类型
+            if (type === 'fixed_content') {
+                fieldFixed.classList.remove('hidden');
+            }
+        }
+
+        async function saveNode(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData);
+            
+            // Clean up data based on type
+            // 优化：不再清除其他节点的题号和图表配置
+            /*
+            if (data.node_type !== 'data_analysis') {
+                delete data.question_number;
+                delete data.show_data_table;
+                delete data.show_ai_interpretation;
+                delete data.charts;
+                delete data.content_order;
+            } else {
+            */
+                // Collect charts
+                const chartCheckboxes = document.querySelectorAll('#node-form input[name="chart_type"]:checked');
+                data.charts = Array.from(chartCheckboxes).map((cb, index) => ({
+                    chart_type: cb.value,
+                    sort_order: index + 1,
+                    config: {}
+                }));
+            /* } */
+
+            if (data.node_type !== 'fixed_content') {
+                delete data.fixed_content;
+            }
+            
+            // Handle checkboxes
+            data.show_data_table = data.show_data_table === 'on';
+            data.show_ai_interpretation = data.show_ai_interpretation === 'on';
+            
+            // Add structure_id
+            data.structure_id = currentStructureId;
+            
+            // Handle empty parent_id
+            if (!data.parent_id) delete data.parent_id;
+            
+            const id = data.node_id;
+            try {
+                const url = id ? `${API_BASE_URL}/structures/nodes/${id}` : `${API_BASE_URL}/structures/nodes`;
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (result.code === 200) {
+                    closeNodeModal();
+                    selectStructure(currentStructureId);
+                }
+            } catch (error) {
+                console.error('保存节点失败:', error);
+            }
+        }
+
+        async function deleteNode(id) {
+            if (!confirm('确定要删除此节点及其子节点吗？')) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/structures/nodes/${id}`, {
+                    method: 'DELETE'
+                });
+                if (response.ok) {
+                    selectStructure(currentStructureId);
+                }
+            } catch (error) {
+                console.error('删除节点失败:', error);
+            }
+        }
+
+        async function saveOrder() {
+            // Collect all nodes with their new order and parent
+            const items = [];
+            
+            // Recursive function to walk the DOM
+            const walk = (container, parentId, level) => {
+                container.querySelectorAll(':scope > .node-wrapper').forEach((el, index) => {
+                    const id = parseInt(el.dataset.id);
+                    items.push({
+                        id: id,
+                        sort_order: index + 1,
+                        parent_id: parentId,
+                        level: level
+                    });
+                    
+                    const childrenContainer = el.querySelector('.children-container');
+                    if (childrenContainer) {
+                        walk(childrenContainer, id, level + 1);
+                    }
+                });
+            };
+            
+            walk(document.getElementById('nodes-container'), null, 1);
+            
+            try {
+                await fetch(`${API_BASE_URL}/structures/nodes/reorder`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items })
+                });
+            } catch (error) {
+                console.error('保存排序失败:', error);
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.addEventListener('DOMContentLoaded', loadStructures);
+
+        // Import Modal Functions
+        let importedNodes = null;
+        let importedFileName = '';
+
+        function openImportModal() {
+            document.getElementById('import-modal').classList.remove('hidden');
+            resetImportModal();
+        }
+
+        function closeImportModal() {
+            document.getElementById('import-modal').classList.add('hidden');
+        }
+
+        function resetImportModal() {
+            document.getElementById('import-step-1').classList.remove('hidden');
+            document.getElementById('import-step-2').classList.add('hidden');
+            document.getElementById('btn-import-confirm').classList.add('hidden');
+            document.getElementById('word-file').value = '';
+            document.getElementById('import-preview-tree').innerHTML = '';
+            importedNodes = null;
+        }
+
+        async function handleFileSelect(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            importedFileName = file.name.replace('.docx', '');
+            
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                // Show loading state
+                const container = document.getElementById('import-step-1');
+                const originalContent = container.innerHTML;
+                container.innerHTML = '<div class="text-center p-8"><i class="fas fa-spinner fa-spin text-3xl text-[#6366F1]"></i><p class="mt-2 text-gray-500">正在解析结构...</p></div>';
+
+                const response = await fetch(`${API_BASE_URL}/structures/extract`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('解析失败');
+
+                const result = await response.json();
+                if (result.code === 200) {
+                    importedNodes = result.data.structure;
+                    showImportPreview();
+                } else {
+                    alert(result.message || '解析失败');
+                    container.innerHTML = originalContent;
+                }
+            } catch (error) {
+                console.error('导入失败:', error);
+                alert('文件解析失败，请检查文件格式');
+                document.getElementById('import-step-1').innerHTML = `<div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#6366F1] transition-colors cursor-pointer" onclick="document.getElementById('word-file').click()"><i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i><p class="text-gray-600">点击上传 Word 文件 (.docx)</p><input type="file" id="word-file" accept=".docx" class="hidden" onchange="handleFileSelect(this)"></div>`;
+            }
+        }
+
+        function showImportPreview() {
+            document.getElementById('import-step-1').classList.add('hidden');
+            document.getElementById('import-step-2').classList.remove('hidden');
+            document.getElementById('btn-import-confirm').classList.remove('hidden');
+            
+            document.getElementById('import-structure-name').value = importedFileName;
+            
+            // Count stats
+            const countNodes = (nodes) => {
+                let count = 0;
+                for(let n of nodes) {
+                    count++;
+                    if(n.children) count += countNodes(n.children);
+                }
+                return count;
+            };
+            const total = countNodes(importedNodes);
+            document.getElementById('import-stats').textContent = `共识别到 ${total} 个章节`;
+            
+            // Render tree preview
+            const container = document.getElementById('import-preview-tree');
+            container.innerHTML = renderImportTree(importedNodes);
+        }
+
+        function renderImportTree(nodes, level=1) {
+            if (!nodes || nodes.length === 0) return '';
+            
+            return nodes.map(node => `
+                <div class="ml-${(level-1)*4}">
+                    <div class="flex items-center space-x-2 py-1">
+                        <span class="text-xs font-mono text-gray-400 w-4">${level}</span>
+                        <span class="flex-1 truncate ${level===1 ? 'font-semibold text-gray-800' : 'text-gray-600'}">${escapeHtml(node.title)}</span>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">${getNodeTypeLabel(node.node_type)}</span>
+                        ${node.confidence_score ? `<span class="text-[10px] text-green-600" title="AI置信度">${Math.round(node.confidence_score*100)}%</span>` : ''}
+                    </div>
+                    ${renderImportTree(node.children, level+1)}
+                </div>
+            `).join('');
+        }
+
+        async function confirmImport() {
+            if (!importedNodes) return;
+            
+            const name = document.getElementById('import-structure-name').value;
+            const type = document.getElementById('import-report-type').value;
+            
+            if (!name) {
+                alert('请输入结构名称');
+                return;
+            }
+            
+            try {
+                // 1. Create Structure
+                const structRes = await fetch(`${API_BASE_URL}/structures`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        structure_name: name,
+                        report_type: type,
+                        analysis_depth: 3, // Default
+                        description: `从文件 ${importedFileName}.docx 导入`
+                    })
+                });
+                
+                const structData = await structRes.json();
+                if (structData.code !== 200) throw new Error(structData.message);
+                
+                const structureId = structData.data.id;
+                
+                // 2. Import Nodes
+                // Add sort_order based on array index
+                const prepareNodes = (nodes) => {
+                    return nodes.map((node, index) => ({
+                        ...node,
+                        sort_order: index + 1,
+                        children: node.children ? prepareNodes(node.children) : []
+                    }));
+                };
+                
+                const nodesPayload = prepareNodes(importedNodes);
+                
+                const importRes = await fetch(`${API_BASE_URL}/structures/${structureId}/import`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nodes: nodesPayload })
+                });
+                
+                const importResult = await importRes.json();
+                if (importResult.code === 200) {
+                    closeImportModal();
+                    loadStructures();
+                    // Select the new structure
+                    setTimeout(() => selectStructure(structureId), 500);
+                } else {
+                    throw new Error(importResult.message);
+                }
+                
+            } catch (error) {
+                console.error('保存失败:', error);
+                alert('保存结构失败: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

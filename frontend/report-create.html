@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生成新报告 - 报告生成工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .sidebar-item {
+            transition: all 0.2s ease;
+        }
+        .sidebar-item:hover {
+            background-color: rgba(99, 102, 241, 0.1);
+        }
+        .sidebar-item.active {
+            background-color: rgba(99, 102, 241, 0.15);
+            border-left: 3px solid #6366F1;
+        }
+        .btn-primary {
+            background-color: #6366F1;
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover {
+            background-color: #4F46E5;
+            opacity: 0.9;
+        }
+        .btn-success {
+            background-color: #10B981;
+            transition: all 0.2s ease;
+        }
+        .btn-success:hover {
+            background-color: #059669;
+            opacity: 0.9;
+        }
+        .btn-secondary {
+            background-color: #F3F4F6;
+            color: #6B7280;
+            transition: all 0.2s ease;
+        }
+        .btn-secondary:hover {
+            background-color: #E5E7EB;
+            color: #1F2937;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+        }
+        .step-circle {
+            transition: all 0.3s ease;
+        }
+        .step-item.active .step-circle {
+            background-color: #6366F1;
+            color: white;
+            border-color: #6366F1;
+        }
+        .step-item.completed .step-circle {
+            background-color: #10B981;
+            color: white;
+            border-color: #10B981;
+        }
+        .step-line {
+            transition: all 0.3s ease;
+        }
+        .step-item.completed + .step-item .step-line,
+        .step-item.completed .step-line {
+            background-color: #10B981;
+        }
+        .template-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .template-card:hover {
+            border-color: #6366F1;
+            background-color: rgba(99, 102, 241, 0.03);
+        }
+        .template-card.selected {
+            border-color: #6366F1;
+            background-color: rgba(99, 102, 241, 0.08);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        .template-card.selected .check-icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .check-icon {
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.2s ease;
+        }
+        .upload-area {
+            transition: all 0.2s ease;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #6366F1;
+            background-color: rgba(99, 102, 241, 0.03);
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .form-input {
+            transition: all 0.2s ease;
+        }
+        .form-input:focus {
+            border-color: #6366F1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-[#F5F3FF] min-h-screen">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 h-16 flex items-center px-6 fixed top-0 left-0 right-0 z-50">
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-[#6366F1] rounded-lg flex items-center justify-center">
+                <i class="fas fa-file-alt text-white text-sm"></i>
+            </div>
+            <h1 class="text-xl font-semibold text-[#1E1B4B]">报告生成工具</h1>
+        </div>
+        <div class="ml-auto flex items-center space-x-4">
+            <span class="text-sm text-gray-500">v1.0.0</span>
+            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                <i class="fas fa-user text-gray-600 text-sm"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-gray-200 fixed left-0 top-16 bottom-0 z-40">
+        <nav class="p-4 space-y-1">
+            <a href="index.html" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:text-[#1E1B4B]">
+                <i class="fas fa-home w-5"></i>
+                <span class="font-medium">首页</span>
+            </a>
+            <a href="structure-config.html" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:text-[#1E1B4B]">
+                <i class="fas fa-sitemap w-5"></i>
+                <span class="font-medium">报告结构配置</span>
+            </a>
+            <a href="report-create.html" class="sidebar-item active flex items-center space-x-3 px-4 py-3 rounded-lg text-[#1E1B4B]">
+                <i class="fas fa-plus-circle w-5"></i>
+                <span class="font-medium">生成新报告</span>
+            </a>
+            <a href="reports.html" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:text-[#1E1B4B]">
+                <i class="fas fa-list w-5"></i>
+                <span class="font-medium">报告列表</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-64 pt-16 min-h-screen">
+        <div class="p-8">
+            <!-- Page Header -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-[#1E1B4B]">生成新报告</h2>
+                <p class="text-gray-500 mt-1">按照向导步骤生成专业的调研分析报告</p>
+            </div>
+
+            <!-- Step Wizard -->
+            <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+                <div class="flex items-center justify-center">
+                    <div class="flex items-center space-x-4">
+                        <!-- Step 1 -->
+                        <div class="step-item active flex items-center" data-step="1">
+                            <div class="step-circle w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center font-semibold text-sm text-gray-500 bg-white">
+                                1
+                            </div>
+                            <span class="ml-3 font-medium text-[#1E1B4B]">选择报告结构</span>
+                        </div>
+                        
+                        <!-- Line -->
+                        <div class="step-line w-16 h-0.5 bg-gray-200"></div>
+                        
+                        <!-- Step 2 -->
+                        <div class="step-item flex items-center" data-step="2">
+                            <div class="step-circle w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center font-semibold text-sm text-gray-500 bg-white">
+                                2
+                            </div>
+                            <span class="ml-3 font-medium text-gray-500">填写报告信息</span>
+                        </div>
+                        
+                        <!-- Line -->
+                        <div class="step-line w-16 h-0.5 bg-gray-200"></div>
+                        
+                        <!-- Step 3 -->
+                        <div class="step-item flex items-center" data-step="3">
+                            <div class="step-circle w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center font-semibold text-sm text-gray-500 bg-white">
+                                3
+                            </div>
+                            <span class="ml-3 font-medium text-gray-500">上传Excel</span>
+                        </div>
+                        
+                        <!-- Line -->
+                        <div class="step-line w-16 h-0.5 bg-gray-200"></div>
+                        
+                        <!-- Step 4 -->
+                        <div class="step-item flex items-center" data-step="4">
+                            <div class="step-circle w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center font-semibold text-sm text-gray-500 bg-white">
+                                4
+                            </div>
+                            <span class="ml-3 font-medium text-gray-500">生成报告</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step Content -->
+            <div class="bg-white rounded-xl border border-gray-200 p-8">
+                <!-- Step 1: Select Template -->
+                <div id="step-1" class="step-content">
+                    <h3 class="text-lg font-semibold text-[#1E1B4B] mb-2">选择维度模板</h3>
+                    <p class="text-gray-500 mb-6">请选择一个维度模板用于生成报告</p>
+                    
+                    <div id="template-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                        <!-- Templates will be loaded here -->
+                    </div>
+                    
+                    <div id="template-empty" class="hidden text-center py-12">
+                        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-cog text-gray-400 text-3xl"></i>
+                        </div>
+                        <p class="text-gray-500 mb-4">暂无可用模板</p>
+                        <a href="templates.html" class="btn-primary text-white px-4 py-2 rounded-lg inline-flex items-center space-x-2">
+                            <i class="fas fa-plus"></i>
+                            <span>创建模板</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Step 2: Report Information -->
+                <div id="step-2" class="step-content hidden">
+                    <h3 class="text-lg font-semibold text-[#1E1B4B] mb-2">填写报告信息</h3>
+                    <p class="text-gray-500 mb-6">请填写报告的基本信息</p>
+                    
+                    <form id="report-info-form" class="space-y-6 max-w-2xl">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    报告标题 <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="title" required
+                                    class="form-input w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none"
+                                    placeholder="请输入报告标题">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    产品名称 <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="product_name" required
+                                    class="form-input w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none"
+                                    placeholder="请输入产品名称">
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    调研区域 <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="region" required
+                                    class="form-input w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none"
+                                    placeholder="如：华东地区、全国">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    调研时间范围
+                                </label>
+                                <input type="text" name="time_range"
+                                    class="form-input w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none"
+                                    placeholder="如：2024年1月-3月">
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    样本数量
+                                </label>
+                                <input type="number" name="sample_count" min="1"
+                                    class="form-input w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none"
+                                    placeholder="请输入样本数量">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    问题数量
+                                </label>
+                                <input type="number" name="question_count" min="1"
+                                    class="form-input w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none"
+                                    placeholder="请输入问题数量">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Step 3: Upload Excel -->
+                <div id="step-3" class="step-content hidden">
+                    <h3 class="text-lg font-semibold text-[#1E1B4B] mb-2">上传Excel数据</h3>
+                    <p class="text-gray-500 mb-6">请上传包含调研数据的Excel文件</p>
+                    
+                    <div class="max-w-2xl mx-auto">
+                        <div id="upload-area" class="upload-area border-2 border-dashed border-gray-300 rounded-xl p-12 text-center cursor-pointer"
+                            onclick="document.getElementById('file-input').click()"
+                            ondrop="handleDrop(event)"
+                            ondragover="handleDragOver(event)"
+                            ondragleave="handleDragLeave(event)">
+                            <div id="upload-placeholder">
+                                <div class="w-20 h-20 bg-[#6366F1]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-cloud-upload-alt text-[#6366F1] text-3xl"></i>
+                                </div>
+                                <p class="text-lg font-medium text-[#1E1B4B] mb-2">点击或拖拽上传Excel文件</p>
+                                <p class="text-sm text-gray-500">支持 .xlsx, .xls 格式</p>
+                            </div>
+                            <div id="upload-preview" class="hidden">
+                                <div class="flex items-center justify-center space-x-4">
+                                    <div class="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-file-excel text-green-600 text-2xl"></i>
+                                    </div>
+                                    <div class="text-left">
+                                        <p class="font-medium text-[#1E1B4B]" id="file-name"></p>
+                                        <p class="text-sm text-gray-500" id="file-size"></p>
+                                    </div>
+                                    <button type="button" onclick="clearFile(event)" class="text-gray-400 hover:text-red-500 p-2">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="file" id="file-input" class="hidden" accept=".xlsx,.xls" onchange="handleFileSelect(event)">
+                        
+                        <div class="mt-6 bg-blue-50 rounded-lg p-4">
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                                <div class="text-sm text-blue-700">
+                                    <p class="font-medium mb-1">数据格式说明</p>
+                                    <ul class="list-disc list-inside space-y-1 text-blue-600">
+                                        <li>第一行为表头，包含题目编号和选项</li>
+                                        <li>每行代表一份问卷数据</li>
+                                        <li>确保数据完整，无空行</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Generate Report -->
+                <div id="step-4" class="step-content hidden">
+                    <h3 class="text-lg font-semibold text-[#1E1B4B] mb-2">生成报告</h3>
+                    <p class="text-gray-500 mb-6">确认信息无误后生成报告</p>
+                    
+                    <div class="max-w-2xl mx-auto">
+                        <div id="generate-preview" class="bg-gray-50 rounded-xl p-6 mb-6">
+                            <h4 class="font-semibold text-[#1E1B4B] mb-4">报告信息预览</h4>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">报告标题</span>
+                                    <span class="font-medium text-[#1E1B4B]" id="preview-title">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">产品名称</span>
+                                    <span class="font-medium text-[#1E1B4B]" id="preview-product">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">调研区域</span>
+                                    <span class="font-medium text-[#1E1B4B]" id="preview-region">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">模板</span>
+                                    <span class="font-medium text-[#1E1B4B]" id="preview-template">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">数据文件</span>
+                                    <span class="font-medium text-[#1E1B4B]" id="preview-file">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="generate-progress" class="hidden mb-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700">生成进度</span>
+                                <span class="text-sm text-[#6366F1]" id="progress-text">0%</span>
+                            </div>
+                            <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="progress-bar" class="progress-bar h-full bg-[#6366F1] rounded-full" style="width: 0%"></div>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-2" id="progress-status">正在初始化...</p>
+                        </div>
+                        
+                        <div id="generate-result" class="hidden text-center py-8">
+                            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-check text-green-500 text-3xl"></i>
+                            </div>
+                            <h4 class="text-lg font-semibold text-[#1E1B4B] mb-2">报告生成成功</h4>
+                            <p class="text-gray-500 mb-6">您的报告已生成完成</p>
+                            <div class="flex justify-center space-x-3">
+                                <button onclick="viewReport()" class="btn-primary text-white px-6 py-2.5 rounded-lg flex items-center space-x-2">
+                                    <i class="fas fa-eye"></i>
+                                    <span>查看报告</span>
+                                </button>
+                                <button onclick="downloadReport()" class="btn-success text-white px-6 py-2.5 rounded-lg flex items-center space-x-2">
+                                    <i class="fas fa-download"></i>
+                                    <span>下载Word</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="flex justify-between mt-8 pt-6 border-t border-gray-200">
+                    <button id="btn-prev" onclick="prevStep()" class="btn-secondary px-6 py-2.5 rounded-lg flex items-center space-x-2 hidden">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>上一步</span>
+                    </button>
+                    <div class="flex-1"></div>
+                    <button id="btn-next" onclick="nextStep()" class="btn-primary text-white px-6 py-2.5 rounded-lg flex items-center space-x-2">
+                        <span>下一步</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000/api/v1';
+        let currentStep = 1;
+        let selectedStructureId = null;
+        let selectedStructureName = '';
+        let uploadedFile = null;
+        let reportId = null;
+        let reportData = {};
+
+        // Load structures
+        async function loadStructures() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/structures`);
+                const data = await response.json();
+                if (data.code === 200) {
+                    const items = data?.data?.list || data?.data?.items || data?.data || [];
+                    renderStructures(Array.isArray(items) ? items : []);
+                }
+            } catch (error) {
+                console.error('加载结构失败:', error);
+                renderMockStructures();
+            }
+        }
+
+        function renderMockStructures() {
+            const mockStructures = [
+                { id: 1, structure_name: '患者用药调研结构', report_type: '患者问卷', description: '用于收集患者用药行为数据' },
+                { id: 2, structure_name: '医生处方调研结构', report_type: '医生问卷', description: '用于收集医生处方习惯数据' }
+            ];
+            renderStructures(mockStructures);
+        }
+
+        function renderStructures(structures) {
+            const container = document.getElementById('template-list');
+            const emptyState = document.getElementById('template-empty');
+            
+            if (!structures || structures.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            
+            container.innerHTML = structures.map(structure => {
+                const name = structure.structure_name || structure.name || '';
+                const reportType = structure.report_type || '';
+                const reportTypeLabel = reportType === 'patient' ? '患者问卷' : reportType === 'doctor' ? '医生问卷' : reportType;
+                const desc = structure.description || '';
+                return `
+                <div class="template-card border-2 border-gray-200 rounded-xl p-5 ${selectedStructureId === structure.id ? 'selected' : ''}"
+                     onclick="selectStructure(this, ${structure.id}, '${escapeAttr(name)}')">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-10 h-10 bg-[#6366F1]/10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-sitemap text-[#6366F1]"></i>
+                        </div>
+                        <div class="check-icon w-6 h-6 bg-[#6366F1] rounded-full flex items-center justify-center">
+                            <i class="fas fa-check text-white text-xs"></i>
+                        </div>
+                    </div>
+                    <h4 class="font-semibold text-[#1E1B4B] mb-1">${escapeHtml(name)}</h4>
+                    <p class="text-xs text-gray-500 mb-3">${escapeHtml(desc || '暂无描述')}</p>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${reportTypeLabel === '患者问卷' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">
+                        ${escapeHtml(reportTypeLabel)}
+                    </span>
+                </div>
+            `;
+            }).join('');
+        }
+
+        function selectStructure(element, id, name) {
+            selectedStructureId = id;
+            selectedStructureName = name;
+            
+            // Update UI
+            document.querySelectorAll('.template-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            if (element) {
+                element.classList.add('selected');
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function escapeAttr(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/'/g, '&#39;')
+                .replace(/"/g, '&quot;')
+                .replace(/\n/g, ' ');
+        }
+
+        // Step navigation
+        function nextStep() {
+            if (currentStep === 1) {
+                if (!selectedStructureId) {
+                    alert('请选择一个报告结构');
+                    return;
+                }
+            }
+            
+            if (currentStep === 2) {
+                const form = document.getElementById('report-info-form');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+                
+                // Collect form data
+                const formData = new FormData(form);
+                reportData = Object.fromEntries(formData);
+            }
+            
+            if (currentStep === 3) {
+                if (!uploadedFile) {
+                    alert('请上传Excel文件');
+                    return;
+                }
+            }
+            
+            if (currentStep < 4) {
+                currentStep++;
+                updateStepUI();
+            } else {
+                generateReport();
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStepUI();
+            }
+        }
+
+        function updateStepUI() {
+            // Update step indicators
+            document.querySelectorAll('.step-item').forEach((item, index) => {
+                const step = index + 1;
+                item.classList.remove('active', 'completed');
+                
+                if (step === currentStep) {
+                    item.classList.add('active');
+                } else if (step < currentStep) {
+                    item.classList.add('completed');
+                    item.querySelector('.step-circle').innerHTML = '<i class="fas fa-check"></i>';
+                } else {
+                    item.querySelector('.step-circle').textContent = step;
+                }
+            });
+            
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.toggle('hidden', index + 1 !== currentStep);
+                if (index + 1 === currentStep) {
+                    content.classList.add('fade-in');
+                }
+            });
+            
+            // Update buttons
+            document.getElementById('btn-prev').classList.toggle('hidden', currentStep === 1);
+            
+            const nextBtn = document.getElementById('btn-next');
+            if (currentStep === 4) {
+                nextBtn.innerHTML = '<span>生成报告</span><i class="fas fa-magic ml-2"></i>';
+            } else {
+                nextBtn.innerHTML = '<span>下一步</span><i class="fas fa-arrow-right ml-2"></i>';
+            }
+            
+            // Update preview if on step 4
+            if (currentStep === 4) {
+                updatePreview();
+            }
+        }
+
+        function updatePreview() {
+            document.getElementById('preview-title').textContent = reportData.title || '-';
+            document.getElementById('preview-product').textContent = reportData.product_name || '-';
+            document.getElementById('preview-region').textContent = reportData.region || '-';
+            document.getElementById('preview-template').textContent = selectedStructureName || '-';
+            document.getElementById('preview-file').textContent = uploadedFile ? uploadedFile.name : '-';
+        }
+
+        // File upload
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            if (e.target.files.length > 0) {
+                processFile(e.target.files[0]);
+            }
+        }
+
+        function processFile(file) {
+            if (!file.name.match(/\.(xlsx|xls)$/i)) {
+                alert('请上传Excel文件 (.xlsx 或 .xls)');
+                return;
+            }
+            
+            uploadedFile = file;
+            
+            // Show preview
+            document.getElementById('upload-placeholder').classList.add('hidden');
+            document.getElementById('upload-preview').classList.remove('hidden');
+            document.getElementById('file-name').textContent = file.name;
+            document.getElementById('file-size').textContent = formatFileSize(file.size);
+        }
+
+        function clearFile(e) {
+            e.stopPropagation();
+            uploadedFile = null;
+            document.getElementById('file-input').value = '';
+            document.getElementById('upload-placeholder').classList.remove('hidden');
+            document.getElementById('upload-preview').classList.add('hidden');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Generate report
+        async function generateReport() {
+            const nextBtn = document.getElementById('btn-next');
+            const prevBtn = document.getElementById('btn-prev');
+            const previewSection = document.getElementById('generate-preview');
+            const progressSection = document.getElementById('generate-progress');
+            
+            // Hide buttons and preview
+            nextBtn.style.display = 'none';
+            prevBtn.style.display = 'none';
+            previewSection.style.display = 'none';
+            progressSection.classList.remove('hidden');
+            
+            try {
+                // Create form data
+                const formData = new FormData();
+                formData.append('structure_id', selectedStructureId);
+                formData.append('title', reportData.title);
+                formData.append('product_name', reportData.product_name);
+                formData.append('region', reportData.region);
+                if (reportData.time_range) formData.append('time_range', reportData.time_range);
+                if (reportData.sample_count) formData.append('sample_count', reportData.sample_count);
+                if (reportData.question_count) formData.append('question_count', reportData.question_count);
+                formData.append('file', uploadedFile);
+                
+                // Simulate progress
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 90) progress = 90;
+                    updateProgress(progress, '正在分析数据...');
+                }, 500);
+                
+                // Send request
+                const response = await fetch(`${API_BASE_URL}/reports`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                clearInterval(progressInterval);
+                
+                const data = await response.json();
+                
+                if (data.code === 200) {
+                    reportId = data.data.id;
+                    updateProgress(100, '生成完成');
+                    
+                    setTimeout(() => {
+                        progressSection.classList.add('hidden');
+                        document.getElementById('generate-result').classList.remove('hidden');
+                    }, 500);
+                } else {
+                    throw new Error(data.message || '生成失败');
+                }
+            } catch (error) {
+                console.error('生成报告失败:', error);
+                alert('生成报告失败: ' + error.message);
+                
+                // Restore buttons
+                nextBtn.style.display = 'flex';
+                prevBtn.style.display = 'flex';
+                previewSection.style.display = 'block';
+                progressSection.classList.add('hidden');
+            }
+        }
+
+        function updateProgress(progress, status) {
+            document.getElementById('progress-bar').style.width = progress + '%';
+            document.getElementById('progress-text').textContent = Math.round(progress) + '%';
+            document.getElementById('progress-status').textContent = status;
+        }
+
+        function viewReport() {
+            if (reportId) {
+                window.open(`view.html?id=${reportId}`, '_blank');
+            }
+        }
+
+        async function downloadReport() {
+            if (!reportId) return;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/reports/${reportId}/download`);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `report-${reportId}.docx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }
+            } catch (error) {
+                console.error('下载报告失败:', error);
+                alert('下载失败，请重试');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStructures();
+        });
+    </script>
+</body>
+</html>

@@ -327,7 +327,14 @@
     </div>
 
     <script>
-        const API_BASE_URL = 'http://localhost:8000/api/v1';
+        const API_BASE_URL = (() => {
+            if (window.location.protocol === 'file:') return 'http://localhost:8000/api/v1';
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                if (window.location.port === '8000') return '/api/v1';
+                return `${window.location.protocol}//${window.location.hostname}:8000/api/v1`;
+            }
+            return '/api/v1';
+        })();
         let currentStructureId = null;
         let currentNodeId = null;
         let currentNodeData = null; // Store current node data for config
@@ -753,6 +760,9 @@
 
         let importedNodes = [];
         let importedFileName = '';
+        let importParsing = false;
+        let lastParsedFileKey = '';
+        let importStepDefaultHtml = document.getElementById('import-step-1').innerHTML;
 
         function openImportModal() {
             document.getElementById('import-modal').classList.remove('hidden');
@@ -762,28 +772,41 @@
             document.getElementById('import-modal').classList.add('hidden');
         }
         function resetImportModal() {
-            document.getElementById('import-step-1').classList.remove('hidden');
+            const importStep1 = document.getElementById('import-step-1');
+            importStep1.innerHTML = importStepDefaultHtml;
+            importStep1.classList.remove('hidden');
             document.getElementById('import-step-2').classList.add('hidden');
             document.getElementById('btn-import-confirm').classList.add('hidden');
-            document.getElementById('word-file').value = '';
+            const fileInput = document.getElementById('word-file');
+            if (fileInput) fileInput.value = '';
             document.getElementById('import-preview-tree').innerHTML = '';
             importedNodes = [];
+            importParsing = false;
+            lastParsedFileKey = '';
         }
 
         async function handleFileSelect(input) {
             const file = input.files[0];
             if (!file) return;
+            if (importParsing) return;
             if (!file.name.endsWith('.docx')) {
                 showToast('请上传 .docx 格式的 Word 文件');
                 input.value = '';
                 return;
             }
+            const currentFileKey = `${file.name}_${file.size}_${file.lastModified}`;
+            if (currentFileKey === lastParsedFileKey && importedNodes.length > 0) {
+                importedFileName = file.name.replace('.docx', '');
+                showImportPreview();
+                return;
+            }
             importedFileName = file.name.replace('.docx', '');
             const formData = new FormData();
             formData.append('file', file);
+            const container = document.getElementById('import-step-1');
+            const originalContent = container.innerHTML;
             try {
-                const container = document.getElementById('import-step-1');
-                const originalContent = container.innerHTML;
+                importParsing = true;
                 container.innerHTML = '<div class="text-center p-8"><i class="fas fa-spinner fa-spin text-3xl text-[#6366F1]"></i><p class="mt-2 text-gray-500">正在解析结构...</p></div>';
                 const response = await fetch(`${API_BASE_URL}/structures/extract`, {
                     method: 'POST',
@@ -791,12 +814,18 @@
                 });
                 if (!response.ok) {
                     container.innerHTML = originalContent;
-                    showToast('解析失败，请检查文件格式');
+                    let message = '解析失败，请检查文件格式';
+                    try {
+                        const errorResult = await response.json();
+                        message = errorResult.detail || errorResult.message || message;
+                    } catch {}
+                    showToast(message);
                     return;
                 }
                 const result = await response.json();
                 if (result.code === 200) {
                     importedNodes = normalizeImportedNodes(result && result.data ? result.data.structure : null);
+                    lastParsedFileKey = currentFileKey;
                     showImportPreview();
                 } else {
                     container.innerHTML = originalContent;
@@ -804,7 +833,10 @@
                 }
             } catch (error) {
                 console.error('导入失败:', error);
-                showToast('文件解析失败，请稍后重试');
+                container.innerHTML = originalContent;
+                showToast('文件上传失败，请确认后端服务已启动');
+            } finally {
+                importParsing = false;
             }
         }
 

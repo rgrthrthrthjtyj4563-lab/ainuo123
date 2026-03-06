@@ -77,8 +77,8 @@ python -m uvicorn app.main:app --reload
 
 5. **访问前端**
 ```bash
-# 直接打开 frontend/index.html
-# 或使用Live Server等工具
+# 推荐：通过后端静态路由访问（与 API 同源）
+http://localhost:8000/static/index.html
 ```
 
 ## 📁 项目结构

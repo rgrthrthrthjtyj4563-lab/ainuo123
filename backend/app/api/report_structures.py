@@ -20,7 +20,7 @@ async def extract_structure_from_word(
     db: Session = Depends(get_db)
 ):
     """从Word文件提取报告结构"""
-    if not file.filename.lower().endswith(('.docx', '.doc')):
+    if not file.filename.lower().endswith('.docx'):
         raise HTTPException(status_code=400, detail="仅支持Word文件 (.docx)")
     
     content = await file.read()

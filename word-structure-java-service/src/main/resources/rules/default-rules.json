@@ -1,0 +1,6 @@
+{
+  "fixedContentKeywords": ["声明", "版权", "附件", "参考文献", "致谢"],
+  "aiChapterKeywords": ["前言", "背景", "摘要", "综述", "结论", "建议", "总结"],
+  "dataAnalysisKeywords": ["分析", "数据", "统计", "结果", "调研", "情况", "满意度"],
+  "questionPatterns": ["Q\\d+", "第\\d+题"]
+}

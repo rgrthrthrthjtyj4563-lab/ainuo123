@@ -5,7 +5,7 @@ import os
 import asyncio
 import json
 from sqlalchemy.orm import Session
-from typing import Optional, AsyncGenerator
+from typing import Optional, AsyncGenerator, List
 from datetime import datetime
 
 from app.models.database import Report, DimensionTemplate, Dimension, QuestionAnalysisConfig, SessionLocal, ReportStructure, StructureNode
